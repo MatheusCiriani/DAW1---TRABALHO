@@ -1,17 +1,15 @@
-package odontocare.controller;
+package app.odontocare.controller;
 
-import odontocare.model.Consulta;
-import odontocare.service.ConsultaService;
-import odontocare.service.ClienteService; // Para listar clientes no formulário
-import odontocare.service.DentistaService; // Para listar dentistas no formulário
+import app.odontocare.model.Consulta;
+import app.odontocare.service.ConsultaService;
+import app.odontocare.service.ClienteService;
+import app.odontocare.service.DentistaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-// import jakarta.validation.Valid;
 import java.util.Optional;
 
 @Controller
@@ -19,8 +17,8 @@ import java.util.Optional;
 public class ConsultaController {
 
     private final ConsultaService consultaService;
-    private final ClienteService clienteService;   // Para popular dropdown de clientes
-    private final DentistaService dentistaService; // Para popular dropdown de dentistas
+    private final ClienteService clienteService;
+    private final DentistaService dentistaService;
 
     @Autowired
     public ConsultaController(ConsultaService consultaService, ClienteService clienteService, DentistaService dentistaService) {
@@ -32,49 +30,32 @@ public class ConsultaController {
     @GetMapping
     public String listarConsultas(Model model) {
         model.addAttribute("listaConsultas", consultaService.listarTodas());
-        return "consulta/lista-consultas"; // Crie este HTML
+        return "consulta/lista-consultas :: content"; // CORRIGIDO
     }
 
     @GetMapping("/novo")
     public String mostrarFormularioAgendamento(Model model) {
         model.addAttribute("consulta", new Consulta());
-        model.addAttribute("listaClientes", clienteService.listarTodos()); // Para o <select> de clientes
-        model.addAttribute("listaDentistas", dentistaService.listarTodos()); // Para o <select> de dentistas
-        return "consulta/formulario-consulta"; // Crie este HTML
+        model.addAttribute("listaClientes", clienteService.listarTodos());
+        model.addAttribute("listaDentistas", dentistaService.listarTodos());
+        return "consulta/formulario-consulta :: content"; // CORRIGIDO
     }
 
     @PostMapping("/agendar")
     public String agendarConsulta(@ModelAttribute("consulta") /*@Valid*/ Consulta consulta,
                                   BindingResult result,
-                                  Model model, // Para repopular dropdowns em caso de erro
+                                  Model model,
                                   RedirectAttributes redirectAttributes) {
-        // if (result.hasErrors()) {
-        //     model.addAttribute("listaClientes", clienteService.listarTodos());
-        //     model.addAttribute("listaDentistas", dentistaService.listarTodos());
-        //     return "consulta/formulario-consulta";
-        // }
         try {
-            // A lógica de associar Cliente e Dentista com base nos IDs do formulário
-            // pode precisar ser feita aqui ou no service antes de chamar `agendarConsulta`.
-            // Ex: Cliente cliente = clienteService.buscarPorId(consulta.getCliente().getId()).orElse(null);
-            //     Dentista dentista = dentistaService.buscarPorId(consulta.getDentista().getId()).orElse(null);
-            //     consulta.setCliente(cliente);
-            //     consulta.setDentista(dentista);
-
             consultaService.agendarConsulta(consulta);
             redirectAttributes.addFlashAttribute("successMessage", "Consulta agendada com sucesso!");
             return "redirect:/consultas";
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            // Repopular para o formulário
-            // model.addAttribute("listaClientes", clienteService.listarTodos());
-            // model.addAttribute("listaDentistas", dentistaService.listarTodos());
-            // return "consulta/formulario-consulta";
-            // Ou redirecionar para /novo
             return "redirect:/consultas/novo";
         }
     }
-    
+
     @GetMapping("/editar/{id}")
     public String mostrarFormularioEdicaoConsulta(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
         Optional<Consulta> consultaOptional = consultaService.buscarPorId(id);
@@ -82,7 +63,7 @@ public class ConsultaController {
             model.addAttribute("consulta", consultaOptional.get());
             model.addAttribute("listaClientes", clienteService.listarTodos());
             model.addAttribute("listaDentistas", dentistaService.listarTodos());
-            return "consulta/formulario-consulta-edicao"; // Crie este HTML
+            return "consulta/formulario-consulta-edicao :: content"; // CORRIGIDO
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "Consulta não encontrada.");
             return "redirect:/consultas";
@@ -93,17 +74,11 @@ public class ConsultaController {
     public String atualizarConsulta(@PathVariable Long id,
                                     @ModelAttribute("consulta") /*@Valid*/ Consulta consulta,
                                     BindingResult result,
-                                    Model model, // Para repopular dropdowns
+                                    Model model,
                                     RedirectAttributes redirectAttributes) {
-        consulta.setId(id); // Garanta que o ID está no objeto
-        // if (result.hasErrors()) {
-        //     model.addAttribute("listaClientes", clienteService.listarTodos());
-        //     model.addAttribute("listaDentistas", dentistaService.listarTodos());
-        //     return "consulta/formulario-consulta-edicao";
-        // }
+        consulta.setId(id);
         try {
-            // Similar ao agendamento, pode precisar carregar Cliente e Dentista
-            consultaService.atualizarConsulta(consulta); // Supondo que este método exista no service
+            consultaService.atualizarConsulta(consulta);
             redirectAttributes.addFlashAttribute("successMessage", "Consulta atualizada com sucesso!");
             return "redirect:/consultas";
         } catch (RuntimeException e) {
@@ -128,7 +103,7 @@ public class ConsultaController {
         try {
             consultaService.finalizarConsulta(id);
             redirectAttributes.addFlashAttribute("successMessage", "Consulta finalizada com sucesso!");
-            // Poderia redirecionar para a página de pagamento ou detalhes da consulta
+            return "redirect:/consultas";
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Erro ao finalizar consulta: " + e.getMessage());
         }

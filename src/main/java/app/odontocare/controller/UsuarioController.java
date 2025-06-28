@@ -1,13 +1,13 @@
-package odontocare.controller;
+package app.odontocare.controller; // PACOTE CORRIGIDO
 
-import odontocare.service.UsuarioService;
+import app.odontocare.service.UsuarioService; // PACOTE CORRIGIDO
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.GetMapping; // Para página de login
-import org.springframework.ui.Model; // Para página de login
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.ui.Model;
 
 @Controller
 // @RequestMapping("/usuarios") // Ou direto na raiz para login
@@ -37,7 +37,7 @@ public class UsuarioController {
         if (error != null) {
             model.addAttribute("loginError", "Login ou senha inválidos.");
         }
-        return "auth/login"; // Crie a pasta auth e o arquivo login.html
+        return "auth/login :: content";
     }
 
     // Endpoints para POST de login e logout são geralmente gerenciados pelo Spring Security

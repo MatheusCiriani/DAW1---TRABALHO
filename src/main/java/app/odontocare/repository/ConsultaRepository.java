@@ -1,8 +1,8 @@
-package odontocare.repository;
+package app.odontocare.repository; // PACOTE CORRIGIDO
 
-import odontocare.model.Consulta;
-import odontocare.model.Dentista;
-import odontocare.model.Cliente;
+import app.odontocare.model.Consulta; // PACOTE CORRIGIDO
+import app.odontocare.model.Dentista; // PACOTE CORRIGIDO
+import app.odontocare.model.Cliente; // PACOTE CORRIGIDO
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Date;

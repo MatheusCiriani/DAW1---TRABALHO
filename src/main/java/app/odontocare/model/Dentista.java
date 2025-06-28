@@ -1,33 +1,26 @@
-package odontocare.model;
+package app.odontocare.model;
 
 import jakarta.persistence.*;
-import java.util.List;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 
 @Entity
+@Table(name = "dentistas")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Dentista {
+@SuperBuilder
+@EqualsAndHashCode(callSuper = true) // Importante para equals/hashCode em classes que herdam
+public class Dentista extends Usuario { // HERDA DE USUARIO
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    // Campos herdados de Usuario: id, login, email, senha, dataCriacao
 
-    private String nomeAdm; 
-    private String email;
-    
+    @Column(nullable = false, length = 255)
+    private String nomeAdm; // Nome administrativo do dentista
 
-    
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "usuario_id", referencedColumnName = "id", unique = true)
-    private Usuario usuario;
-
-    
-    @OneToMany(mappedBy = "dentista", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Consulta> consultasAgendadas;
-
-
+    @Column(unique = true, nullable = false, length = 20) // CRO é único e obrigatório
+    private String cro;
 }

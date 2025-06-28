@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Recibo - OdontoCare</title>
+</head>
+<body>
+    <!-- src/main/resources/templates/pagamento/recibo.html -->
+    <div th:fragment="content"> <!-- NOVO: Fragmento 'content' -->
+        <div class="max-w-xl mx-auto bg-white p-8 rounded-lg shadow-md mt-10 border border-gray-300">
+            <h2 class="text-2xl font-bold text-center mb-6">Recibo de Pagamento</h2>
+
+            <div class="mb-4 text-right">
+                <strong>Data de Emissão:</strong> <span th:text="${#dates.format(#dates.createNow(), 'dd/MM/yyyy')}"></span>
+            </div>
+
+            <h3 class="text-lg font-semibold mb-4 border-b pb-2">Informações do Pagamento</h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div><strong>ID do Pagamento:</strong></div>
+                <div th:text="${pagamento.id}"></div>
+
+                <div><strong>Valor:</strong></div>
+                <div th:text="${#numbers.formatCurrency(pagamento.valor)}"></div>
+
+                <div><strong>Data do Pagamento:</strong></div>
+                <div th:text="${#dates.format(pagamento.dataPagamento, 'dd/MM/yyyy HH:mm')}"></div>
+
+                <div><strong>Status:</strong></div>
+                <div th:text="${pagamento.status}"></div>
+
+                <div><strong>Tipo de Pagamento:</strong></div>
+                <div th:text="${pagamento.tipoPagamento}"></div>
+            </div>
+
+            <h3 class="text-lg font-semibold mt-8 mb-4 border-b pb-2">Informações da Consulta</h3>
+            <div class="grid grid-cols-2 gap-4" th:if="${pagamento.consulta != null}">
+                <div><strong>Consulta ID:</strong></div>
+                <div th:text="${pagamento.consulta.id}"></div>
+
+                <div><strong>Cliente:</strong></div>
+                <div th:text="${pagamento.consulta.cliente?.nomeCliente}"></div>
+
+                <div><strong>Dentista:</strong></div>
+                <div th:text="${pagamento.consulta.dentista?.nomeAdm}"></div>
+
+                <div><strong>Data da Consulta:</strong></div>
+                <div th:text="${#dates.format(pagamento.consulta.dataHora, 'dd/MM/yyyy HH:mm')}"></div>
+
+                <div><strong>Status da Consulta:</strong></div>
+                <div th:text="${pagamento.consulta.status}"></div>
+            </div>
+            <div th:if="${pagamento.consulta == null}">
+                <p>Nenhuma informação de consulta associada.</p>
+            </div>
+
+            <div class="text-center mt-10">
+                <p class="text-sm text-gray-600">Este é um recibo gerado automaticamente. Nenhuma assinatura é necessária.</p>
+            </div>
+
+            <div class="flex justify-center mt-6">
+                <a th:href="@{/pagamentos/consulta/{id}(id=${pagamento.consulta.id})}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                   th:if="${pagamento.consulta != null}">Voltar para Detalhes do Pagamento</a>
+                <a th:href="@{/consultas}" class="inline-block align-baseline font-bold text-sm text-gray-500 hover:text-gray-800 ml-4">
+                    Voltar para Consultas
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

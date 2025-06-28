@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle ?: 'OdontoCare'}">OdontoCare</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    </head>
+<body class="bg-gray-100 font-sans leading-normal tracking-normal">
+
+    <div th:replace="~{fragments/header :: header}"></div>
+
+    <main class="container mx-auto mt-8 p-4">
+        <div th:replace="${content}"></div>
+    </main>
+
+    <footer class="mt-8 p-4 bg-gray-800 text-white text-center">
+        <p>&copy; 2025 OdontoCare. Todos os direitos reservados.</p>
+    </footer>
+
+    <script src="https://unpkg.com/htmx.org@1.9.10" integrity="sha384-D1Kt99CQgClQqRhs0Ij9VdbeSmSvZzofGsoNlPoYl3mihKTWaiL8FMGVADXQCp0r" crossorigin="anonymous"></script>
+</body>
+</html>

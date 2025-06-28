@@ -1,16 +1,13 @@
-package odontocare.controller;
+package app.odontocare.controller;
 
-import odontocare.model.Dentista;
-import odontocare.model.Usuario; // Para o formulário
-import odontocare.service.DentistaService;
+import app.odontocare.model.Dentista;
+import app.odontocare.service.DentistaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-
-// import jakarta.validation.Valid; // Se for usar Bean Validation
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -29,48 +26,36 @@ public class DentistaController {
     @GetMapping
     public String listarDentistas(Model model) {
         model.addAttribute("listaDentistas", dentistaService.listarTodos());
-        return "dentista/lista-dentistas"; // Crie este HTML
+        return "dentista/lista-dentistas :: content"; // CORRIGIDO
     }
 
     @GetMapping("/novo")
     public String mostrarFormularioCadastroDentista(Model model) {
         Dentista dentista = new Dentista();
-        dentista.setUsuario(new Usuario()); // Inicializa usuário para o formulário
         model.addAttribute("dentista", dentista);
-        return "dentista/formulario-dentista"; // Crie este HTML
+        return "dentista/formulario-dentista :: content"; // CORRIGIDO
     }
 
     @PostMapping("/cadastrar")
     public String cadastrarDentista(@ModelAttribute("dentista") /*@Valid*/ Dentista dentista,
                                     BindingResult result,
                                     RedirectAttributes redirectAttributes) {
-        // if (result.hasErrors()) {
-        //     // Se o usuário não foi preenchido no form, reinicialize para não dar erro de null no template
-        //     if (dentista.getUsuario() == null) {
-        //         dentista.setUsuario(new Usuario());
-        //     }
-        //     return "dentista/formulario-dentista";
-        // }
         try {
             dentistaService.cadastrarDentista(dentista);
             redirectAttributes.addFlashAttribute("successMessage", "Dentista cadastrado com sucesso!");
             return "redirect:/dentistas";
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            // Para manter os dados no formulário:
-            // model.addAttribute("dentista", dentista); // Precisa do Model como parâmetro do método
-            // return "dentista/formulario-dentista";
-            // Ou redirecionar para /novo:
             return "redirect:/dentistas/novo";
         }
     }
 
     @GetMapping("/editar/{id}")
     public String mostrarFormularioEdicaoDentista(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
-        Optional<Dentista> dentistaOptional = dentistaService.buscarPorId(id); // Supondo que exista este método no service
+        Optional<Dentista> dentistaOptional = dentistaService.buscarPorId(id);
         if (dentistaOptional.isPresent()) {
             model.addAttribute("dentista", dentistaOptional.get());
-            return "dentista/formulario-dentista-edicao"; // Crie este HTML
+            return "dentista/formulario-dentista-edicao :: content"; // CORRIGIDO
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "Dentista não encontrado.");
             return "redirect:/dentistas";
@@ -82,12 +67,8 @@ public class DentistaController {
                                     @ModelAttribute("dentista") /*@Valid*/ Dentista dentista,
                                     BindingResult result,
                                     RedirectAttributes redirectAttributes) {
-        // if (result.hasErrors()) {
-        //    dentista.setId(id); // Garanta que o ID está presente para o formulário de edição
-        //    return "dentista/formulario-dentista-edicao";
-        // }
         try {
-            dentistaService.atualizarDentista(id, dentista); // Supondo que exista este método no service
+            dentistaService.atualizarDentista(id, dentista);
             redirectAttributes.addFlashAttribute("successMessage", "Dentista atualizado com sucesso!");
             return "redirect:/dentistas";
         } catch (RuntimeException e) {
@@ -99,7 +80,7 @@ public class DentistaController {
     @GetMapping("/deletar/{id}")
     public String deletarDentista(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
-            dentistaService.deletarDentista(id); // Supondo que exista este método no service
+            dentistaService.deletarDentista(id);
             redirectAttributes.addFlashAttribute("successMessage", "Dentista deletado com sucesso!");
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Erro ao deletar dentista: " + e.getMessage());
@@ -107,10 +88,9 @@ public class DentistaController {
         return "redirect:/dentistas";
     }
 
-    // Método para visualizar agenda do dentista
     @GetMapping("/{id}/agenda")
     public String visualizarAgenda(@PathVariable Long id,
-                                   @RequestParam(name = "data", required = false) String dataStr, // data no formato YYYY-MM-DD
+                                   @RequestParam(name = "data", required = false) String dataStr,
                                    Model model,
                                    RedirectAttributes redirectAttributes) {
         Optional<Dentista> dentistaOptional = dentistaService.buscarPorId(id);
@@ -126,17 +106,12 @@ public class DentistaController {
         model.addAttribute("dataSelecionada", dataSelecionada);
 
         try {
-            // Supondo que o service retorne algo como AgendaVisualizacaoDTO
-            // ou uma lista de horários e uma lista de consultas
             List<String> horariosDisponiveis = dentistaService.listarHorariosDisponiveis(id, dataSelecionada);
-            // List<Consulta> consultasDoDia = dentistaService.listarConsultasPorDia(id, dataSelecionada);
-
             model.addAttribute("horariosDisponiveis", horariosDisponiveis);
-            // model.addAttribute("consultasDoDia", consultasDoDia);
-            return "dentista/agenda-dentista"; // Crie este HTML
+            return "dentista/agenda-dentista :: content"; // CORRIGIDO (se este for o template para agendamento do dentista)
         } catch (RuntimeException e) {
             model.addAttribute("agendaErrorMessage", "Erro ao carregar agenda: " + e.getMessage());
-            return "dentista/agenda-dentista"; // Ou uma página de erro
+            return "dentista/agenda-dentista :: content"; // CORRIGIDO
         }
     }
 }

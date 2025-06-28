@@ -1,6 +1,6 @@
-package odontocare.dto;
+package app.odontocare.dto; 
 
-import odontocare.model.Consulta; 
+import app.odontocare.model.Consulta; 
 import java.time.LocalTime; 
 import java.util.List;
 import lombok.Data;

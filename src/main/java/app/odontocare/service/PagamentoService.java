@@ -1,15 +1,16 @@
-package odontocare.service;
+package app.odontocare.service;
 
-import odontocare.model.Pagamento;
-import odontocare.model.Consulta;
-import odontocare.repository.PagamentoRepository;
-import odontocare.repository.ConsultaRepository;
+import app.odontocare.model.Pagamento;
+import app.odontocare.model.Consulta;
+import app.odontocare.repository.PagamentoRepository;
+import app.odontocare.repository.ConsultaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.Date;
+import java.util.List;
 
 @Service
 public class PagamentoService {
@@ -28,27 +29,33 @@ public class PagamentoService {
         Consulta consulta = consultaRepository.findById(consultaId)
                 .orElseThrow(() -> new RuntimeException("Consulta não encontrada para registrar pagamento."));
 
-        if (pagamentoRepository.findByConsulta(consulta).isPresent()) {
+        // getPagamento() em Consulta
+        if (consulta.getPagamento() != null) {
             throw new RuntimeException("Já existe um pagamento registrado para esta consulta.");
         }
 
         Pagamento novoPagamento = new Pagamento();
-        novoPagamento.setConsulta(consulta);
-        novoPagamento.setValor(pagamentoInfo.getValor()); // Idealmente o valor viria da consulta/procedimento
+        // getValor(), getTipoPagamento() em PagamentoInfo
+        // setValor(), setTipoPagamento(), setDataPagamento(), setStatus() em novoPagamento
+        novoPagamento.setValor(pagamentoInfo.getValor());
         novoPagamento.setTipoPagamento(pagamentoInfo.getTipoPagamento());
-        novoPagamento.setDataPagamento(new Date()); // Data atual do pagamento
-        novoPagamento.setStatus("PAGO"); // Ou PENDENTE se for outro fluxo
+        novoPagamento.setDataPagamento(new Date());
+        novoPagamento.setStatus("PAGO");
 
-        consulta.setPagamento(novoPagamento); // Associar de volta
-        // consultaRepository.save(consulta); // Cascade deve cuidar do pagamento
-        return pagamentoRepository.save(novoPagamento);
+        Pagamento pagamentoSalvo = pagamentoRepository.save(novoPagamento);
+
+        // setPagamento() em Consulta
+        consulta.setPagamento(pagamentoSalvo);
+        consultaRepository.save(consulta);
+
+        return pagamentoSalvo;
     }
 
-    public Optional<Pagamento> buscarPagamentoPorConsultaId(Long consultaId) {
-        Consulta consulta = new Consulta(); // Criar instância apenas para o ID
-        consulta.setId(consultaId);
-        return pagamentoRepository.findByConsulta(consulta);
+    public Optional<Pagamento> buscarPorId(Long pagamentoId) {
+        return pagamentoRepository.findById(pagamentoId);
     }
 
-    // Outros métodos: verificarStatus, emitirRecibo (pode ser um DTO/relatório)
+    public List<Pagamento> listarTodos() {
+        return pagamentoRepository.findAll();
+    }
 }

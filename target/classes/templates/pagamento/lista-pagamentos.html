@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Lista de Pagamentos - OdontoCare</title>
+</head>
+<body>
+    <!-- src/main/resources/templates/pagamento/lista-pagamentos.html -->
+    <div th:fragment="content"> <!-- NOVO: Fragmento 'content' -->
+        <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
+            <h2 class="text-2xl font-bold text-center mb-6">Lista de Pagamentos</h2>
+
+            <div th:if="${successMessage}" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <span class="block sm:inline" th:text="${successMessage}"></span>
+            </div>
+            <div th:if="${errorMessage}" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <span class="block sm:inline" th:text="${errorMessage}"></span>
+            </div>
+
+            <table class="min-w-full bg-white border border-gray-200">
+                <thead>
+                    <tr>
+                        <th class="py-2 px-4 border-b">ID</th>
+                        <th class="py-2 px-4 border-b">Consulta ID</th>
+                        <th class="py-2 px-4 border-b">Valor</th>
+                        <th class="py-2 px-4 border-b">Data Pagamento</th>
+                        <th class="py-2 px-4 border-b">Status</th>
+                        <th class="py-2 px-4 border-b">Tipo Pagamento</th>
+                        <th class="py-2 px-4 border-b">Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="pagamento : ${listaPagamentos}">
+                        <td class="py-2 px-4 border-b text-center" th:text="${pagamento.id}">1</td>
+                        <td class="py-2 px-4 border-b text-center" th:text="${pagamento.consulta?.id}">101</td>
+                        <td class="py-2 px-4 border-b" th:text="${#numbers.formatCurrency(pagamento.valor)}">R$ 100,00</td>
+                        <td class="py-2 px-4 border-b" th:text="${#dates.format(pagamento.dataPagamento, 'dd/MM/yyyy')}">01/01/2025</td>
+                        <td class="py-2 px-4 border-b" th:text="${pagamento.status}">PAGO</td>
+                        <td class="py-2 px-4 border-b" th:text="${pagamento.tipoPagamento}">CARTAO</td>
+                        <td class="py-2 px-4 border-b text-center">
+                            <a th:href="@{/pagamentos/recibo/{id}(id=${pagamento.id})}" class="text-blue-500 hover:text-blue-700">Recibo</a>
+                            <!-- Adicionar opções de edição/exclusão se necessário -->
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(listaPagamentos)}">
+                        <td colspan="7" class="py-4 px-4 text-center text-gray-500">Nenhum pagamento registrado.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,53 +1,44 @@
-package odontocare.service;
+package app.odontocare.service;
 
-import odontocare.model.Cliente;
-import odontocare.model.Usuario; // Adicionado
-import odontocare.repository.ClienteRepository;
-import odontocare.repository.UsuarioRepository; // Adicionado
-// import org.springframework.security.crypto.password.PasswordEncoder; // Para senhas
+import app.odontocare.model.Cliente;
+import app.odontocare.repository.ClienteRepository;
+import app.odontocare.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Date; // Para java.util.Date
 
 @Service
 public class ClienteService {
 
     private final ClienteRepository clienteRepository;
-    private final UsuarioRepository usuarioRepository; // Para gerenciar o usuário associado
-    // private final PasswordEncoder passwordEncoder; // Injete se for usar Spring Security
+    private final UsuarioRepository usuarioRepository;
 
     @Autowired
     public ClienteService(ClienteRepository clienteRepository,
-                          UsuarioRepository usuarioRepository
-                          /*PasswordEncoder passwordEncoder*/) {
+                          UsuarioRepository usuarioRepository) {
         this.clienteRepository = clienteRepository;
         this.usuarioRepository = usuarioRepository;
-        // this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional
     public Cliente cadastrarCliente(Cliente cliente) {
-        // Validação de email único para cliente
-        if (clienteRepository.findByEmail(cliente.getEmail()).isPresent()) {
-            throw new RuntimeException("Email do cliente já cadastrado");
+        if (cliente.getLogin() != null && usuarioRepository.findByLogin(cliente.getLogin()).isPresent()) {
+            throw new RuntimeException("Login já cadastrado.");
+        }
+        // getEmail() em Cliente (herdado de Usuario)
+        if (cliente.getEmail() != null && usuarioRepository.findByEmail(cliente.getEmail()).isPresent()) {
+            throw new RuntimeException("Email já cadastrado.");
         }
 
-        Usuario usuario = cliente.getUsuario();
-        if (usuario != null) {
-            // Validação de login único para usuário
-            if (usuario.getLogin() != null && usuarioRepository.findByLogin(usuario.getLogin()).isPresent()) {
-                throw new RuntimeException("Login de usuário já cadastrado");
-            }
-            // Exemplo de hash de senha (DESCOMENTE e ajuste se usar Spring Security)
-            // if (usuario.getSenha() != null) {
-            //     usuario.setSenha(passwordEncoder.encode(usuario.getSenha()));
-            // }
-            // Se o usuário for novo e gerenciado aqui
-            // usuarioRepository.save(usuario); // JPA fará cascade se configurado em Cliente->Usuario
+        // getDataCriacao() e setDataCriacao() em Cliente (herdado de Usuario)
+        if (cliente.getDataCriacao() == null) {
+            cliente.setDataCriacao(new Date());
         }
+
         return clienteRepository.save(cliente);
     }
 
@@ -56,6 +47,10 @@ public class ClienteService {
     }
 
     public Optional<Cliente> buscarPorEmail(String email) {
+        // Agora que Cliente herda de Usuario, o findByEmail pode ser no UsuarioRepository
+        // ou um método findByEmail no ClienteRepository que "busca" no campo email herdado.
+        // Se o findByEmail em ClienteRepository espera um campo 'email' em Cliente, ele deve existir lá.
+        // Se não existir, você precisará mudar para usuarioRepository.findByEmail(email)
         return clienteRepository.findByEmail(email);
     }
 
@@ -67,30 +62,28 @@ public class ClienteService {
     public Cliente atualizarPerfil(Long id, Cliente clienteAtualizado) {
         return clienteRepository.findById(id)
                 .map(clienteExistente -> {
+                    // getNomeCliente(), getEndereco(), getIdade(), getTelefone() em Cliente
                     clienteExistente.setNomeCliente(clienteAtualizado.getNomeCliente());
                     clienteExistente.setEndereco(clienteAtualizado.getEndereco());
-                    if (!clienteExistente.getEmail().equals(clienteAtualizado.getEmail()) &&
-                        clienteRepository.findByEmail(clienteAtualizado.getEmail()).isPresent()) {
-                        throw new RuntimeException("Novo email já está em uso por outro cliente.");
-                    }
-                    clienteExistente.setEmail(clienteAtualizado.getEmail());
                     clienteExistente.setIdade(clienteAtualizado.getIdade());
                     clienteExistente.setTelefone(clienteAtualizado.getTelefone());
 
-                    // Atualizar dados do usuário associado, se necessário e permitido
-                    if (clienteAtualizado.getUsuario() != null && clienteExistente.getUsuario() != null) {
-                        Usuario usuarioAtualizado = clienteAtualizado.getUsuario();
-                        Usuario usuarioExistente = clienteExistente.getUsuario();
-
-                        // Exemplo: Permitir atualização do login do usuário (com validação de unicidade)
-                        // if (usuarioAtualizado.getLogin() != null && !usuarioAtualizado.getLogin().equals(usuarioExistente.getLogin())) {
-                        //     if (usuarioRepository.findByLogin(usuarioAtualizado.getLogin()).isPresent()) {
-                        //         throw new RuntimeException("Novo login de usuário já está em uso.");
-                        //     }
-                        //     usuarioExistente.setLogin(usuarioAtualizado.getLogin());
-                        // }
-                        // Nunca atualize a senha diretamente assim sem re-criptografar
+                    // getEmail() e setEmail() em Cliente (herdado de Usuario)
+                    if (!clienteExistente.getEmail().equals(clienteAtualizado.getEmail())) {
+                        if (usuarioRepository.findByEmail(clienteAtualizado.getEmail()).isPresent()) {
+                            throw new RuntimeException("Novo email já está em uso.");
+                        }
+                        clienteExistente.setEmail(clienteAtualizado.getEmail());
                     }
+
+                    // getLogin() e setLogin() em Cliente (herdado de Usuario)
+                    if (!clienteExistente.getLogin().equals(clienteAtualizado.getLogin())) {
+                        if (usuarioRepository.findByLogin(clienteAtualizado.getLogin()).isPresent()) {
+                            throw new RuntimeException("Novo login já está em uso.");
+                        }
+                        clienteExistente.setLogin(clienteAtualizado.getLogin());
+                    }
+
                     return clienteRepository.save(clienteExistente);
                 }).orElseThrow(() -> new RuntimeException("Cliente não encontrado com id: " + id));
     }
@@ -100,6 +93,6 @@ public class ClienteService {
         if (!clienteRepository.existsById(id)) {
             throw new RuntimeException("Cliente não encontrado com id: " + id);
         }
-        clienteRepository.deleteById(id); // Cascade deve remover o usuário associado se configurado
+        clienteRepository.deleteById(id);
     }
 }
