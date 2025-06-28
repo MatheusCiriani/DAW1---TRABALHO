@@ -37,7 +37,7 @@ public class UsuarioController {
         if (error != null) {
             model.addAttribute("loginError", "Login ou senha inválidos.");
         }
-        return "auth/login :: content";
+        return "auth/login";
     }
 
     // Endpoints para POST de login e logout são geralmente gerenciados pelo Spring Security

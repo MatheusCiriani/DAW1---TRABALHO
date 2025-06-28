@@ -1,12 +1,10 @@
 <!DOCTYPE html>
-<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/layoutpadrao}">
 <head>
     <title>Agenda do Dentista - OdontoCare</title>
 </head>
 <body>
-    <!-- src/main/resources/templates/dentista/agenda-dentista.html -->
-    <div th:fragment="content"> <!-- NOVO: Fragmento 'content' -->
-        <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
+    <div layout:fragment="conteudo"> <div class="max-w-4xl mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
             <h2 class="text-2xl font-bold text-center mb-6">Agenda de <span th:text="${dentista.nomeAdm}"></span></h2>
             <h3 class="text-xl font-semibold text-center mb-4">Data: <span th:text="${#dates.format(dataSelecionada, 'dd/MM/yyyy')}"></span></h3>
 
@@ -27,28 +25,6 @@
             <ul class="list-disc list-inside mb-6">
                 <li th:each="horario : ${horariosDisponiveis}" th:text="${horario}"></li>
             </ul>
-
-            <!-- Se você tiver uma lista de consultas agendadas para o dia, pode exibi-las aqui -->
-            <!--
-            <h3 class="text-lg font-semibold mb-4">Consultas Agendadas para o Dia:</h3>
-            <div th:if="${#lists.isEmpty(consultasDoDia)}" class="text-gray-500 text-center">Nenhuma consulta agendada para esta data.</div>
-            <table class="min-w-full bg-white border border-gray-200" th:if="${not #lists.isEmpty(consultasDoDia)}">
-                <thead>
-                    <tr>
-                        <th class="py-2 px-4 border-b">Hora</th>
-                        <th class="py-2 px-4 border-b">Cliente</th>
-                        <th class="py-2 px-4 border-b">Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="consulta : ${consultasDoDia}">
-                        <td class="py-2 px-4 border-b" th:text="${#dates.format(consulta.dataHora, 'HH:mm')}"></td>
-                        <td class="py-2 px-4 border-b" th:text="${consulta.cliente.nomeCliente}"></td>
-                        <td class="py-2 px-4 border-b" th:text="${consulta.status}"></td>
-                    </tr>
-                </tbody>
-            </table>
-            -->
 
             <div class="flex justify-center mt-6">
                 <a th:href="@{/dentistas}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
