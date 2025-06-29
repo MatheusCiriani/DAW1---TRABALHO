@@ -3,13 +3,16 @@ package app.odontocare.service;
 import app.odontocare.model.Dentista;
 import app.odontocare.model.Agenda;
 import app.odontocare.model.Consulta;
+import app.odontocare.model.Papel; // Importar Papel
 import app.odontocare.repository.DentistaRepository;
 import app.odontocare.repository.AgendaRepository;
 import app.odontocare.repository.ConsultaRepository;
 import app.odontocare.repository.UsuarioRepository;
+import app.odontocare.repository.PapelRepository; // NOVO: para buscar papéis
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder; // NOVO: Importar
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -20,6 +23,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.HashSet; // Para Set de Papel
 
 @Service
 public class DentistaService {
@@ -28,21 +32,27 @@ public class DentistaService {
     private final AgendaRepository agendaRepository;
     private final ConsultaRepository consultaRepository;
     private final UsuarioRepository usuarioRepository;
+    private final PasswordEncoder passwordEncoder; // NOVO: Injetar o PasswordEncoder
+    private final PapelRepository papelRepository; // NOVO: Injetar PapelRepository para atribuir papel padrão
+
 
     @Autowired
     public DentistaService(DentistaRepository dentistaRepository,
                            AgendaRepository agendaRepository,
                            ConsultaRepository consultaRepository,
-                           UsuarioRepository usuarioRepository) {
+                           UsuarioRepository usuarioRepository,
+                           PasswordEncoder passwordEncoder, // NOVO
+                           PapelRepository papelRepository) { // NOVO
         this.dentistaRepository = dentistaRepository;
         this.agendaRepository = agendaRepository;
         this.consultaRepository = consultaRepository;
         this.usuarioRepository = usuarioRepository;
+        this.passwordEncoder = passwordEncoder; // NOVO
+        this.papelRepository = papelRepository; // NOVO
     }
 
     @Transactional
     public Dentista cadastrarDentista(Dentista dentista) {
-        // getLogin(), getEmail(), getDataCriacao() em Dentista (herdado de Usuario)
         if (dentista.getLogin() != null && usuarioRepository.findByLogin(dentista.getLogin()).isPresent()) {
             throw new RuntimeException("Login já cadastrado.");
         }
@@ -50,7 +60,6 @@ public class DentistaService {
             throw new RuntimeException("Email já cadastrado.");
         }
 
-        // getCro() em Dentista
         if (dentista.getCro() != null && dentistaRepository.findByCro(dentista.getCro()).isPresent()) {
             throw new RuntimeException("CRO já cadastrado.");
         }
@@ -58,6 +67,19 @@ public class DentistaService {
         if (dentista.getDataCriacao() == null) {
             dentista.setDataCriacao(new Date());
         }
+
+        // NOVO: Criptografar a senha antes de salvar
+        if (dentista.getSenha() != null && !dentista.getSenha().isEmpty()) {
+            dentista.setSenha(passwordEncoder.encode(dentista.getSenha()));
+        } else {
+            throw new RuntimeException("A senha não pode ser vazia."); // Senha é obrigatória
+        }
+
+        // NOVO: Atribuir papel padrão de ROLE_DENTISTA
+        Papel papelDentista = papelRepository.findByNome("ROLE_DENTISTA")
+            .orElseThrow(() -> new RuntimeException("Papel ROLE_DENTISTA não encontrado. Execute as migrações Flyway."));
+        dentista.getPapeis().add(papelDentista); // Adicionar o papel ao Set de papéis do dentista
+        dentista.setAtivo(true); // NOVO: Definir como ativo por padrão
 
         return dentistaRepository.save(dentista);
     }
@@ -74,10 +96,8 @@ public class DentistaService {
     public Dentista atualizarDentista(Long id, Dentista dentistaAtualizado) {
         return dentistaRepository.findById(id)
                 .map(dentistaExistente -> {
-                    // getNomeAdm() em Dentista
                     dentistaExistente.setNomeAdm(dentistaAtualizado.getNomeAdm());
 
-                    // getEmail() e setEmail() em Dentista (herdado de Usuario)
                     if (!dentistaExistente.getEmail().equals(dentistaAtualizado.getEmail())) {
                         if (usuarioRepository.findByEmail(dentistaAtualizado.getEmail()).isPresent()) {
                             throw new RuntimeException("Novo email já está em uso.");
@@ -85,7 +105,6 @@ public class DentistaService {
                         dentistaExistente.setEmail(dentistaAtualizado.getEmail());
                     }
 
-                    // getLogin() e setLogin() em Dentista (herdado de Usuario)
                     if (!dentistaExistente.getLogin().equals(dentistaAtualizado.getLogin())) {
                         if (usuarioRepository.findByLogin(dentistaAtualizado.getLogin()).isPresent()) {
                             throw new RuntimeException("Novo login já está em uso.");
@@ -93,12 +112,16 @@ public class DentistaService {
                         dentistaExistente.setLogin(dentistaAtualizado.getLogin());
                     }
 
-                    // getCro() e setCro() em Dentista
                     if (!dentistaExistente.getCro().equals(dentistaAtualizado.getCro())) {
                         if (dentistaRepository.findByCro(dentistaAtualizado.getCro()).isPresent()) {
                             throw new RuntimeException("Novo CRO já está em uso.");
                         }
                         dentistaExistente.setCro(dentistaAtualizado.getCro());
+                    }
+
+                    // NOVO: Atualizar senha APENAS se uma nova senha for fornecida no formulário
+                    if (dentistaAtualizado.getSenha() != null && !dentistaAtualizado.getSenha().isEmpty()) {
+                        dentistaExistente.setSenha(passwordEncoder.encode(dentistaAtualizado.getSenha()));
                     }
 
                     return dentistaRepository.save(dentistaExistente);
@@ -119,7 +142,6 @@ public class DentistaService {
 
         DayOfWeek diaDaSemana = dia.getDayOfWeek();
 
-        // getHoraInicio() e getHoraFim() em Agenda
         List<Agenda> horariosDeTrabalhoDoDia = agendaRepository
                 .findByDentistaAndDiaDaSemana(dentista, diaDaSemana);
 

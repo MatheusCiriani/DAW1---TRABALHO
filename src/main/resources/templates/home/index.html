@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{layout/layoutpadrao}">
+<head>
+    <title>Página Inicial - OdontoCare</title>
+</head>
+<body>
+    <div layout:fragment="conteudo">
+        <div class="container mx-auto mt-8 p-4 bg-white rounded-lg shadow-md">
+            <h1 class="text-3xl font-bold text-center text-blue-600 mb-6">Bem-vindo ao OdontoCare!</h1>
+            <p class="text-lg text-gray-700 text-center mb-8">
+                Seu sistema de gerenciamento de clínicas odontológicas.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="p-4 border rounded-lg shadow-sm text-center">
+                    <h2 class="text-xl font-semibold mb-2">Gerenciar Clientes</h2>
+                    <p class="text-gray-600 mb-4">Adicione, edite e visualize informações de clientes.</p>
+                    <a th:href="@{/clientes}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Ir para Clientes</a>
+                </div>
+                <div class="p-4 border rounded-lg shadow-sm text-center">
+                    <h2 class="text-xl font-semibold mb-2">Gerenciar Dentistas</h2>
+                    <p class="text-gray-600 mb-4">Gerencie a equipe de dentistas e seus CROs.</p>
+                    <a th:href="@{/dentistas}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Ir para Dentistas</a>
+                </div>
+                <div class="p-4 border rounded-lg shadow-sm text-center">
+                    <h2 class="text-xl font-semibold mb-2">Agendar Consultas</h2>
+                    <p class="text-gray-600 mb-4">Agende e acompanhe as consultas dos pacientes.</p>
+                    <a th:href="@{/consultas}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Ir para Consultas</a>
+                </div>
+                </div>
+        </div>
+    </div>
+</body>
+</html>

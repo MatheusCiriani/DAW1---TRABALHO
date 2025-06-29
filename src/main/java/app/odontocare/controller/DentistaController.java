@@ -85,7 +85,7 @@ public class DentistaController {
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Erro ao deletar dentista: " + e.getMessage());
         }
-        return "redirect:/dentistas";
+        return "redirect:dentistas";
     }
 
     @GetMapping("/{id}/agenda")
