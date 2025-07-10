@@ -18,8 +18,11 @@
                         <a th:href="@{/consultas}" class="hover:text-blue-200">Consultas</a>
                     </li>
                     <li sec:authorize="isAuthenticated()">
-                        <a th:href="@{/agendas}" class="hover:text-blue-200">Agendas</a> </li>
-
+                        <a th:href="@{/agendas}" class="hover:text-blue-200">Agendas</a>
+                    </li>
+                    <li sec:authorize="isAuthenticated()">
+                        <a th:href="@{/relatorios}" class="hover:text-blue-200">Relatórios</a>
+                    </li>
                     <li sec:authorize="isAuthenticated()">
                         <form th:action="@{/logout}" method="post" style="display:inline;">
                             <button type="submit" class="hover:text-blue-200 bg-transparent border-none text-white cursor-pointer font-bold">Deslogar</button>

@@ -15,6 +15,9 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+
 
 import java.time.LocalDate;
 import java.time.DayOfWeek;
@@ -43,9 +46,11 @@ public class ConsultaController {
         this.dentistaService = dentistaService;
     }
 
+        
     @GetMapping
-    public String listarConsultas(Model model) {
-        model.addAttribute("listaConsultas", consultaService.listarTodasConsultas());
+    public String listarConsultas(@RequestParam(defaultValue = "0") int page, Model model) {
+        Page<Consulta> pagina = consultaService.listarPaginadas(PageRequest.of(page, 5));
+        model.addAttribute("pagina", pagina);
         return "consulta/lista-consultas";
     }
 

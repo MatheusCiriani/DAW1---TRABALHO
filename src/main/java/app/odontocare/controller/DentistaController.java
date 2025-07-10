@@ -13,6 +13,8 @@ import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 @Controller
 @RequestMapping("/dentistas")
@@ -26,8 +28,9 @@ public class DentistaController {
     }
 
     @GetMapping
-    public String listarDentistas(Model model) {
-        model.addAttribute("listaDentistas", dentistaService.listarTodosDentistas()); // MÉTODO RENOMEADO
+    public String listarDentistas(@RequestParam(defaultValue = "0") int page, Model model) {
+        Page<Dentista> pagina = dentistaService.listarPaginado(PageRequest.of(page, 5));
+        model.addAttribute("pagina", pagina);
         return "dentista/lista-dentistas";
     }
 

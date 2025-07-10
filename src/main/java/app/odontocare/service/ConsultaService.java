@@ -11,6 +11,9 @@ import app.odontocare.repository.PagamentoRepository; // Mantido, mas não será
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -137,5 +140,9 @@ public class ConsultaService {
         consultaExistente.setDentista(dentista);
 
         return consultaRepository.save(consultaExistente);
+    }
+
+    public Page<Consulta> listarPaginadas(Pageable pageable) {
+        return consultaRepository.findAll(pageable);
     }
 }

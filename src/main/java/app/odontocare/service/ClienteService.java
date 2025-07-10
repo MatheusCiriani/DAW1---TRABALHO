@@ -6,6 +6,7 @@ import app.odontocare.repository.ClienteRepository;
 import app.odontocare.repository.UsuarioRepository;
 import app.odontocare.repository.PapelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -14,6 +15,11 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 
 
 import java.util.List;
@@ -120,4 +126,9 @@ public class ClienteService {
         }
         clienteRepository.deleteById(id);
     }
+
+    public Page<Cliente> listarPaginado(Pageable pageable) {
+        return clienteRepository.findAll(pageable);
+    }
+
 }

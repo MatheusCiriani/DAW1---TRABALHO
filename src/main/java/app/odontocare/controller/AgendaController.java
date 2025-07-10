@@ -5,11 +5,15 @@ import app.odontocare.model.Dentista;
 import app.odontocare.service.AgendaService;
 import app.odontocare.service.DentistaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -56,8 +60,13 @@ public class AgendaController {
         }
 
     @GetMapping
-    public String listarAgendas(Model model) {
-        model.addAttribute("listaAgendas", agendaService.listarTodas());
+    public String listarAgendas(Model model, @RequestParam(defaultValue = "0") int page) {
+        int tamanhoPagina = 5; // ou 10, você escolhe
+        Page<Agenda> pagina = agendaService.listarPaginado(PageRequest.of(page, tamanhoPagina));
+        
+        model.addAttribute("listaAgendas", pagina.getContent()); // dados da página atual
+        model.addAttribute("pagina", pagina); // metadados para navegação
+
         return "agenda/lista-agendas";
     }
 
@@ -103,4 +112,5 @@ public class AgendaController {
         }
         return "redirect:/agendas";
     }
+
 }

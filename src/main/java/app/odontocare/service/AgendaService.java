@@ -7,6 +7,8 @@ import app.odontocare.repository.DentistaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate; // Ainda útil para lógica, mas não no objeto Agenda
@@ -96,5 +98,9 @@ public class AgendaService {
         Dentista dentista = dentistaRepository.findById(dentistaId)
                 .orElseThrow(() -> new RuntimeException("Dentista não encontrado."));
         return agendaRepository.findByDentista(dentista);
+    }
+
+    public Page<Agenda> listarPaginado(Pageable pageable) {
+        return agendaRepository.findAll(pageable);
     }
 }

@@ -16,4 +16,6 @@ public interface AgendaRepository extends JpaRepository<Agenda, Long> {
     List<Agenda> findByDentistaAndDiaDaSemana(Dentista dentista, DayOfWeek diaDaSemana);
     // REMOVIDO: Optional<Agenda> findByDentistaAndData(Dentista dentista, LocalDate data);
     // REMOVIDO: List<Agenda> findByDentistaAndDataBetween(Dentista dentista, LocalDate dataInicio, LocalDate dataFim);
+    Optional<Agenda> findByDentistaIdAndDiaDaSemana(Long dentistaId, DayOfWeek diaDaSemana);
+
 }

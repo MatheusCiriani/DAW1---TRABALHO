@@ -20,7 +20,7 @@ public class WebSecurityConfig {
                 // Permite acesso irrestrito a recursos estáticos (CSS, JS, imagens, etc.)
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                 // Permite acesso irrestrito à página de login, cadastro de cliente E A PÁGINA INICIAL
-                .requestMatchers("/", "/login", "/clientes/novo", "/clientes/cadastrar").permitAll() // ALTERADO: Adicionado "/"
+                .requestMatchers("/login", "/clientes/novo", "/clientes/cadastrar", "/css/**", "/js/**", "/images/**", "/webjars/**").permitAll()
                 // Requer autenticação para qualquer outra requisição
                 .anyRequest().authenticated()
             )

@@ -38,7 +38,7 @@
             </tr>
             </thead>
             <tbody>
-            <tr th:each="consulta : ${listaConsultas}">
+            <tr th:each="consulta : ${pagina.content}">
                 <td class="py-2 px-4 border-b" th:text="${consulta.id}">1</td>
                 <td class="py-2 px-4 border-b" th:text="${consulta.cliente.nomeCliente}">Nome do Cliente</td>
                 <td class="py-2 px-4 border-b" th:text="${consulta.dentista.nomeAdm}">Nome do Dentista</td>
@@ -53,11 +53,23 @@
                        onclick="return confirm('Tem certeza que deseja finalizar esta consulta?');">Finalizar</a>
                 </td>
             </tr>
-            <tr th:if="${#lists.isEmpty(listaConsultas)}">
+            <tr th:if="${pagina.content.isEmpty()}">
                 <td colspan="6" class="py-4 px-4 text-center text-gray-500">Nenhuma consulta encontrada.</td>
             </tr>
             </tbody>
         </table>
+
+        <div class="flex justify-center mt-4" th:if="${pagina.totalPages > 1}">
+            <nav class="inline-flex space-x-2">
+                <a th:each="i : ${#numbers.sequence(0, pagina.totalPages - 1)}"
+                   th:href="@{/consultas(page=${i})}"
+                   th:text="${i + 1}"
+                   th:classappend="${i == pagina.number} ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-800'"
+                   class="px-3 py-1 rounded hover:bg-blue-400">
+                </a>
+            </nav>
+        </div>
+
     </div>
 </div>
 </body>
