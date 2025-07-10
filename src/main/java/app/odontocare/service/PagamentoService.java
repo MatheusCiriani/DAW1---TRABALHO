@@ -29,11 +29,6 @@ public class PagamentoService {
         Consulta consulta = consultaRepository.findById(consultaId)
                 .orElseThrow(() -> new RuntimeException("Consulta não encontrada para registrar pagamento."));
 
-        // getPagamento() em Consulta
-        if (consulta.getPagamento() != null) {
-            throw new RuntimeException("Já existe um pagamento registrado para esta consulta.");
-        }
-
         Pagamento novoPagamento = new Pagamento();
         // getValor(), getTipoPagamento() em PagamentoInfo
         // setValor(), setTipoPagamento(), setDataPagamento(), setStatus() em novoPagamento
@@ -44,14 +39,12 @@ public class PagamentoService {
 
         Pagamento pagamentoSalvo = pagamentoRepository.save(novoPagamento);
 
-        // setPagamento() em Consulta
-        consulta.setPagamento(pagamentoSalvo);
         consultaRepository.save(consulta);
 
         return pagamentoSalvo;
     }
 
-    public Optional<Pagamento> buscarPorId(Long pagamentoId) {
+    public Optional<Pagamento> buscarPagamentoPorConsultaId(Long pagamentoId) {
         return pagamentoRepository.findById(pagamentoId);
     }
 

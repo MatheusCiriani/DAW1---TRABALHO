@@ -9,6 +9,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.LocalDate;
+import java.time.DayOfWeek;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,15 +27,15 @@ public class DentistaController {
 
     @GetMapping
     public String listarDentistas(Model model) {
-        model.addAttribute("listaDentistas", dentistaService.listarTodos());
-        return "dentista/lista-dentistas :: content"; // CORRIGIDO
+        model.addAttribute("listaDentistas", dentistaService.listarTodosDentistas()); // MÉTODO RENOMEADO
+        return "dentista/lista-dentistas";
     }
 
     @GetMapping("/novo")
     public String mostrarFormularioCadastroDentista(Model model) {
         Dentista dentista = new Dentista();
         model.addAttribute("dentista", dentista);
-        return "dentista/formulario-dentista :: content"; // CORRIGIDO
+        return "dentista/formulario-dentista";
     }
 
     @PostMapping("/cadastrar")
@@ -55,7 +57,7 @@ public class DentistaController {
         Optional<Dentista> dentistaOptional = dentistaService.buscarPorId(id);
         if (dentistaOptional.isPresent()) {
             model.addAttribute("dentista", dentistaOptional.get());
-            return "dentista/formulario-dentista-edicao :: content"; // CORRIGIDO
+            return "dentista/formulario-dentista-edicao";
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "Dentista não encontrado.");
             return "redirect:/dentistas";
@@ -85,7 +87,7 @@ public class DentistaController {
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Erro ao deletar dentista: " + e.getMessage());
         }
-        return "redirect:dentistas";
+        return "redirect:/dentistas";
     }
 
     @GetMapping("/{id}/agenda")
@@ -106,12 +108,12 @@ public class DentistaController {
         model.addAttribute("dataSelecionada", dataSelecionada);
 
         try {
-            List<String> horariosDisponiveis = dentistaService.listarHorariosDisponiveis(id, dataSelecionada);
+            List<LocalTime> horariosDisponiveis = dentistaService.listarHorariosDisponiveis(id, dataSelecionada);
             model.addAttribute("horariosDisponiveis", horariosDisponiveis);
-            return "dentista/agenda-dentista :: content"; // CORRIGIDO (se este for o template para agendamento do dentista)
+            return "dentista/agenda-dentista";
         } catch (RuntimeException e) {
             model.addAttribute("agendaErrorMessage", "Erro ao carregar agenda: " + e.getMessage());
-            return "dentista/agenda-dentista :: content"; // CORRIGIDO
+            return "dentista/agenda-dentista";
         }
     }
 }

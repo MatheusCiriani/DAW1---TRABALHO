@@ -12,9 +12,31 @@ public class OdontoCareApplication {
     public static void main(String[] args) {
         SpringApplication.run(OdontoCareApplication.class, args);
         // BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-        // String rawPassword = "admin"; // A senha que você quer criptografar
-        // String encodedPassword = encoder.encode(rawPassword);
-        // System.out.println("Senha '" + rawPassword + "' criptografada: " + encodedPassword);
+
+        // // Senhas que você quer criptografar
+        // String[] passwords = {
+        //     "joao.silva",
+        //     "maria.santos",
+        //     "maria.santos",
+        //     "pedro.almeida",
+        //     "ana.costa",
+        //     "luiz.fernandes",
+        //     "sofia.rodrigues",
+        //     "carlos.gomes",
+        //     "julia.lima",
+        //     "rafael.pereira",
+        //     "beatriz.silva",
+        //     "dr.roberto",
+        //     "dra.ana",
+        //     "dr.felipe",
+        // };
+
+        // System.out.println("--- Senhas Criptografadas com BCrypt ---");
+        // for (String rawPassword : passwords) {
+        //     String encodedPassword = encoder.encode(rawPassword);
+        //     System.out.println("Senha '" + rawPassword + "' criptografada: " + encodedPassword);
+        // }
+        // System.out.println("------------------------------------------");
     
     }
 }

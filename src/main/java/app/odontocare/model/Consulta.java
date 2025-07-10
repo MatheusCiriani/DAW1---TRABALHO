@@ -2,6 +2,9 @@ package app.odontocare.model;
 
 import jakarta.persistence.*;
 import java.util.Date; // Para compatibilidade com o tipo Date em ConsultaController/Service
+
+import org.springframework.format.annotation.DateTimeFormat;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -15,25 +18,26 @@ public class Consulta {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Temporal(TemporalType.TIMESTAMP) // Armazena data e hora
-    @Column(nullable = false)
-    private Date dataHora;
-
-    @Column(nullable = false, length = 50) // Status da consulta (AGENDADA, CANCELADA, REALIZADA)
-    private String status;
+    private Long id; // <-- Campo de identificação necessário!
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "cliente_id", nullable = false) // Chave estrangeira para Cliente
+    @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dentista_id", nullable = false) // Chave estrangeira para Dentista
+    @JoinColumn(name = "dentista_id", nullable = false)
     private Dentista dentista;
 
-    // Relacionamento unidirecional: Consulta TEM um Pagamento.
-    // 'mappedBy' indica que o lado 'Pagamento' é que gerencia a chave estrangeira.
-    @OneToOne(mappedBy = "consulta", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
-    private Pagamento pagamento;
+    @Temporal(TemporalType.TIMESTAMP)
+    @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm") // ADICIONE ESTA LINHA
+    @Column(nullable = false)
+    private Date dataHora;
+
+
+    @Column(nullable = false)
+    @Temporal(TemporalType.TIME)
+    private Date horario;
+
+    @Column(nullable = false, length = 50)
+    private String status;
 }

@@ -3,27 +3,29 @@ package app.odontocare.service;
 import app.odontocare.model.Dentista;
 import app.odontocare.model.Agenda;
 import app.odontocare.model.Consulta;
-import app.odontocare.model.Papel; // Importar Papel
+import app.odontocare.model.Papel;
 import app.odontocare.repository.DentistaRepository;
 import app.odontocare.repository.AgendaRepository;
 import app.odontocare.repository.ConsultaRepository;
 import app.odontocare.repository.UsuarioRepository;
-import app.odontocare.repository.PapelRepository; // NOVO: para buscar papéis
+import app.odontocare.repository.PapelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.crypto.password.PasswordEncoder; // NOVO: Importar
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import java.util.HashSet; // Para Set de Papel
+import java.util.HashSet;
+import java.util.Comparator;
 
 @Service
 public class DentistaService {
@@ -32,8 +34,10 @@ public class DentistaService {
     private final AgendaRepository agendaRepository;
     private final ConsultaRepository consultaRepository;
     private final UsuarioRepository usuarioRepository;
-    private final PasswordEncoder passwordEncoder; // NOVO: Injetar o PasswordEncoder
-    private final PapelRepository papelRepository; // NOVO: Injetar PapelRepository para atribuir papel padrão
+    private final PasswordEncoder passwordEncoder;
+    private final PapelRepository papelRepository;
+    
+    private static final int DURACAO_SLOT_MINUTOS = 30;
 
 
     @Autowired
@@ -41,14 +45,14 @@ public class DentistaService {
                            AgendaRepository agendaRepository,
                            ConsultaRepository consultaRepository,
                            UsuarioRepository usuarioRepository,
-                           PasswordEncoder passwordEncoder, // NOVO
-                           PapelRepository papelRepository) { // NOVO
+                           PasswordEncoder passwordEncoder,
+                           PapelRepository papelRepository) {
         this.dentistaRepository = dentistaRepository;
         this.agendaRepository = agendaRepository;
         this.consultaRepository = consultaRepository;
         this.usuarioRepository = usuarioRepository;
-        this.passwordEncoder = passwordEncoder; // NOVO
-        this.papelRepository = papelRepository; // NOVO
+        this.passwordEncoder = passwordEncoder;
+        this.papelRepository = papelRepository;
     }
 
     @Transactional
@@ -68,23 +72,21 @@ public class DentistaService {
             dentista.setDataCriacao(new Date());
         }
 
-        // NOVO: Criptografar a senha antes de salvar
-        if (dentista.getSenha() != null && !dentista.getSenha().isEmpty()) {
-            dentista.setSenha(passwordEncoder.encode(dentista.getSenha()));
-        } else {
-            throw new RuntimeException("A senha não pode ser vazia."); // Senha é obrigatória
+        if (dentista.getSenha() == null || dentista.getSenha().isEmpty()) {
+            throw new RuntimeException("A senha não pode ser vazia.");
         }
+        dentista.setSenha(passwordEncoder.encode(dentista.getSenha()));
 
-        // NOVO: Atribuir papel padrão de ROLE_DENTISTA
         Papel papelDentista = papelRepository.findByNome("ROLE_DENTISTA")
-            .orElseThrow(() -> new RuntimeException("Papel ROLE_DENTISTA não encontrado. Execute as migrações Flyway."));
-        dentista.getPapeis().add(papelDentista); // Adicionar o papel ao Set de papéis do dentista
-        dentista.setAtivo(true); // NOVO: Definir como ativo por padrão
+            .orElseThrow(() -> new RuntimeException("Papel ROLE_DENTISTA não encontrado. Verifique as migrações Flyway."));
+        dentista.getPapeis().add(papelDentista);
+        dentista.setAtivo(true);
 
         return dentistaRepository.save(dentista);
     }
 
-    public List<Dentista> listarTodos() {
+    // MÉTODO RENOMEADO para listarTodosDentistas
+    public List<Dentista> listarTodosDentistas() {
         return dentistaRepository.findAll();
     }
 
@@ -119,7 +121,6 @@ public class DentistaService {
                         dentistaExistente.setCro(dentistaAtualizado.getCro());
                     }
 
-                    // NOVO: Atualizar senha APENAS se uma nova senha for fornecida no formulário
                     if (dentistaAtualizado.getSenha() != null && !dentistaAtualizado.getSenha().isEmpty()) {
                         dentistaExistente.setSenha(passwordEncoder.encode(dentistaAtualizado.getSenha()));
                     }
@@ -136,67 +137,75 @@ public class DentistaService {
         dentistaRepository.deleteById(id);
     }
 
-    public List<String> listarHorariosDisponiveis(Long dentistaId, LocalDate dia) {
+    public List<LocalTime> listarHorariosDisponiveis(Long dentistaId, LocalDate dataEspecifica) {
         Dentista dentista = dentistaRepository.findById(dentistaId)
-                .orElseThrow(() -> new RuntimeException("Dentista não encontrado"));
+                .orElseThrow(() -> new RuntimeException("Dentista não encontrado."));
 
-        DayOfWeek diaDaSemana = dia.getDayOfWeek();
+        DayOfWeek diaDaSemana = dataEspecifica.getDayOfWeek();
 
-        List<Agenda> horariosDeTrabalhoDoDia = agendaRepository
+        List<Agenda> horariosDeTrabalhoPadrao = agendaRepository
                 .findByDentistaAndDiaDaSemana(dentista, diaDaSemana);
+        
+        if (horariosDeTrabalhoPadrao.isEmpty()) {
+            return new ArrayList<>();
+        }
 
-        Date inicioDoDia = Date.from(dia.atStartOfDay(ZoneId.systemDefault()).toInstant());
-        Date fimDoDia = Date.from(dia.atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant());
+        List<LocalTime> todosOsSlotsPotenciais = new ArrayList<>();
+        for (Agenda agenda : horariosDeTrabalhoPadrao) {
+            LocalTime slotAtual = agenda.getHoraInicio();
+            while (slotAtual.isBefore(agenda.getHoraFim())) {
+                todosOsSlotsPotenciais.add(slotAtual);
+                slotAtual = slotAtual.plusMinutes(DURACAO_SLOT_MINUTOS);
+            }
+        }
+        
+        LocalDateTime inicioDoDia = dataEspecifica.atStartOfDay();
+        LocalDateTime fimDoDia = dataEspecifica.atTime(LocalTime.MAX);
 
         List<Consulta> consultasAgendadasNoDia = consultaRepository
-                .findByDentistaAndDataHoraBetween(dentista, inicioDoDia, fimDoDia);
+                .findByDentistaAndDataHoraBetween(dentista, 
+                                                  Date.from(inicioDoDia.atZone(ZoneId.systemDefault()).toInstant()),
+                                                  Date.from(fimDoDia.atZone(ZoneId.systemDefault()).toInstant()));
 
         List<LocalTime> slotsOcupados = consultasAgendadasNoDia.stream()
                 .map(consulta -> consulta.getDataHora().toInstant().atZone(ZoneId.systemDefault()).toLocalTime())
                 .collect(Collectors.toList());
 
-        List<String> slotsDisponiveis = new ArrayList<>();
-        int duracaoSlot = 30;
+        List<LocalTime> slotsDisponiveis = todosOsSlotsPotenciais.stream()
+                .filter(slot -> !slotsOcupados.contains(slot))
+                .sorted(Comparator.naturalOrder())
+                .collect(Collectors.toList());
 
-        for (Agenda agenda : horariosDeTrabalhoDoDia) {
-            LocalTime slotAtual = agenda.getHoraInicio();
-            while (slotAtual.isBefore(agenda.getHoraFim())) {
-                if (!slotsOcupados.contains(slotAtual)) {
-                    slotsDisponiveis.add(slotAtual.toString());
-                }
-                slotAtual = slotAtual.plusMinutes(duracaoSlot);
-            }
-        }
         return slotsDisponiveis;
     }
 
-    public boolean verificarDisponibilidade(Long dentistaId, Date dataHora) {
+    public boolean verificarDisponibilidade(Long dentistaId, LocalDateTime dataHoraConsulta) {
         Optional<Dentista> dentistaOptional = dentistaRepository.findById(dentistaId);
         if (!dentistaOptional.isPresent()) {
             throw new RuntimeException("Dentista não encontrado.");
         }
         Dentista dentista = dentistaOptional.get();
 
-        LocalDate dataConsulta = dataHora.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        LocalTime horaConsulta = dataHora.toInstant().atZone(ZoneId.systemDefault()).toLocalTime();
-        DayOfWeek diaDaSemanaConsulta = dataConsulta.getDayOfWeek();
+        LocalDate data = dataHoraConsulta.toLocalDate();
+        LocalTime hora = dataHoraConsulta.toLocalTime();
+        DayOfWeek diaDaSemana = data.getDayOfWeek();
 
-        List<Agenda> horariosAgenda = agendaRepository.findByDentistaAndDiaDaSemana(dentista, diaDaSemanaConsulta);
-        boolean estaDentroDoHorarioDeTrabalho = horariosAgenda.stream().anyMatch(agenda ->
-            (horaConsulta.equals(agenda.getHoraInicio()) || horaConsulta.isAfter(agenda.getHoraInicio())) &&
-            horaConsulta.isBefore(agenda.getHoraFim())
+        List<Agenda> horariosDeTrabalhoPadrao = agendaRepository.findByDentistaAndDiaDaSemana(dentista, diaDaSemana);
+        boolean estaDentroDoHorarioDeTrabalhoPadrao = horariosDeTrabalhoPadrao.stream().anyMatch(agenda ->
+            (hora.equals(agenda.getHoraInicio()) || hora.isAfter(agenda.getHoraInicio())) &&
+            (hora.isBefore(agenda.getHoraFim()))
         );
 
-        if (!estaDentroDoHorarioDeTrabalho) {
+        if (!estaDentroDoHorarioDeTrabalhoPadrao) {
             return false;
         }
 
-        Date inicioSlot = Date.from(dataConsulta.atTime(horaConsulta).atZone(ZoneId.systemDefault()).toInstant());
-        Date fimSlot = Date.from(dataConsulta.atTime(horaConsulta.plusMinutes(30)).atZone(ZoneId.systemDefault()).toInstant());
+        Date inicioSlot = Date.from(dataHoraConsulta.atZone(ZoneId.systemDefault()).toInstant());
+        Date fimSlot = Date.from(dataHoraConsulta.plusMinutes(DURACAO_SLOT_MINUTOS).atZone(ZoneId.systemDefault()).toInstant());
 
-        List<Consulta> consultasExistentes = consultaRepository
+        List<Consulta> consultasExistentesNoSlot = consultaRepository
                 .findByDentistaAndDataHoraBetween(dentista, inicioSlot, fimSlot);
-
-        return consultasExistentes.isEmpty();
+        
+        return consultasExistentesNoSlot.isEmpty();
     }
 }

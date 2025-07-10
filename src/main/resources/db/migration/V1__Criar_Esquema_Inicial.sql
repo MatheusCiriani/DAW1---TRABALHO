@@ -33,28 +33,27 @@ CREATE TABLE clientes (
 CREATE TABLE dentistas (
     id BIGINT PRIMARY KEY,
     nome_adm VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL, -- Mantido se for diferente do email do usuario
     cro VARCHAR(20) UNIQUE NOT NULL,
     FOREIGN KEY (id) REFERENCES usuarios (id)
 );
-
+-- Tabela AGENDAS (Horarios de Trabalho)
 -- Tabela AGENDAS (Horarios de Trabalho)
 CREATE TABLE agendas (
     id BIGSERIAL PRIMARY KEY,
     dentista_id BIGINT NOT NULL,
-    dia_da_semana VARCHAR(20) NOT NULL, -- Ex: SUNDAY, MONDAY
-    data DATE NOT NULL,
+    dia_da_semana VARCHAR(20) NOT NULL,
     hora_inicio TIME NOT NULL,
     hora_fim TIME NOT NULL,
-    FOREIGN KEY (dentista_id) REFERENCES dentistas (id)
+    FOREIGN KEY (dentista_id) REFERENCES dentistas (id),
+    UNIQUE (dentista_id, dia_da_semana) -- NOVO: Restrição de unicidade
 );
-
 -- Tabela CONSULTAS
 CREATE TABLE consultas (
     id BIGSERIAL PRIMARY KEY,
     cliente_id BIGINT NOT NULL,
     dentista_id BIGINT NOT NULL,
     data_hora TIMESTAMP NOT NULL,
+    horario TIME NOT NULL, -- NOVA COLUNA ADICIONADA
     status VARCHAR(50) NOT NULL,
     FOREIGN KEY (cliente_id) REFERENCES clientes (id),
     FOREIGN KEY (dentista_id) REFERENCES dentistas (id)

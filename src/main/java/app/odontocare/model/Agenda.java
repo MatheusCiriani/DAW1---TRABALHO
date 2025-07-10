@@ -2,7 +2,7 @@ package app.odontocare.model;
 
 import jakarta.persistence.*;
 import java.time.DayOfWeek;
-import java.time.LocalDate;
+import java.time.LocalDate; // Manter este import se precisar de LocalDate em outros lugares, mas 'data' não será um campo persistido.
 import java.time.LocalTime;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,11 +24,11 @@ public class Agenda {
     private Dentista dentista;
 
     @Column(nullable = false)
-    @Enumerated(EnumType.STRING) // Armazenar o enum como String
+    @Enumerated(EnumType.STRING)
     private DayOfWeek diaDaSemana;
 
-    @Column(nullable = false)
-    private LocalDate data; // Data específica para a agenda (ex: 2025-07-01)
+    // REMOVIDO: Atributo 'data'
+    // private LocalDate data;
 
     @Column(nullable = false)
     private LocalTime horaInicio;

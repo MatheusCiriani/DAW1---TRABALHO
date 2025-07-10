@@ -1,18 +1,33 @@
 <!DOCTYPE html>
-<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
-    </head>
+</head>
 <body>
     <header th:fragment="header" class="bg-blue-600 text-white p-4 shadow-md">
         <div class="container mx-auto flex justify-between items-center">
             <a href="/" class="text-2xl font-bold">OdontoCare</a>
             <nav>
                 <ul class="flex space-x-4">
-                    <li><a th:href="@{/clientes}" class="hover:text-blue-200">Clientes</a></li>
-                    <li><a th:href="@{/dentistas}" class="hover:text-blue-200">Dentistas</a></li>
-                    <li><a th:href="@{/consultas}" class="hover:text-blue-200">Consultas</a></li>
-                    <li><a th:href="@{/pagamentos}" class="hover:text-blue-200">Pagamentos</a></li>
-                    <li><a th:href="@{/login}" class="hover:text-blue-200">Login</a></li>
+                    <li sec:authorize="isAuthenticated()">
+                        <a th:href="@{/clientes}" class="hover:text-blue-200">Clientes</a>
+                    </li>
+                    <li sec:authorize="isAuthenticated()">
+                        <a th:href="@{/dentistas}" class="hover:text-blue-200">Dentistas</a>
+                    </li>
+                    <li sec:authorize="isAuthenticated()">
+                        <a th:href="@{/consultas}" class="hover:text-blue-200">Consultas</a>
+                    </li>
+                    <li sec:authorize="isAuthenticated()">
+                        <a th:href="@{/agendas}" class="hover:text-blue-200">Agendas</a> </li>
+
+                    <li sec:authorize="isAuthenticated()">
+                        <form th:action="@{/logout}" method="post" style="display:inline;">
+                            <button type="submit" class="hover:text-blue-200 bg-transparent border-none text-white cursor-pointer font-bold">Deslogar</button>
+                        </form>
+                    </li>
+                    <li sec:authorize="!isAuthenticated()">
+                        <a th:href="@{/login}" class="hover:text-blue-200">Login</a>
+                    </li>
                 </ul>
             </nav>
         </div>

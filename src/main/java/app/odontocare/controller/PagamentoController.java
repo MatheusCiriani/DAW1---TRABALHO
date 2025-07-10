@@ -9,7 +9,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import app.odontocare.model.Consulta;
+
 import java.util.Optional;
 
 @Controller
@@ -27,20 +27,19 @@ public class PagamentoController {
 
     @GetMapping
     public String listarPagamentos(Model model) {
-        model.addAttribute("listaPagamentos", pagamentoService.listarTodos());
-        return "pagamento/lista-pagamentos :: content"; // CORRIGIDO
+        model.addAttribute("listaPagamentos", pagamentoService.listarTodos()); // Supondo que este método exista
+        return "pagamento/lista-pagamentos";
     }
 
     @GetMapping("/registrar/consulta/{consultaId}")
     public String mostrarFormularioPagamento(@PathVariable Long consultaId, Model model, RedirectAttributes redirectAttributes) {
-        Optional<Consulta> consultaOptional = consultaService.buscarPorId(consultaId);
-        if (consultaOptional.isPresent()) {
-            Consulta consulta = consultaOptional.get();
+        // MÉTODO RENOMEADO para buscarConsultaPorId
+        if (consultaService.buscarConsultaPorId(consultaId).isPresent()) {
             Pagamento pagamento = new Pagamento();
             model.addAttribute("pagamento", pagamento);
             model.addAttribute("consultaId", consultaId);
-            model.addAttribute("consulta", consulta);
-            return "pagamento/formulario-pagamento :: content"; // CORRIGIDO
+            model.addAttribute("consulta", consultaService.buscarConsultaPorId(consultaId).get());
+            return "pagamento/formulario-pagamento";
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "Consulta não encontrada para registrar pagamento.");
             return "redirect:/consultas";
@@ -65,29 +64,23 @@ public class PagamentoController {
 
     @GetMapping("/consulta/{consultaId}")
     public String visualizarPagamentoPorConsulta(@PathVariable Long consultaId, Model model, RedirectAttributes redirectAttributes) {
-        Optional<Consulta> consultaOptional = consultaService.buscarPorId(consultaId);
-        if (consultaOptional.isPresent()) {
-            Consulta consulta = consultaOptional.get();
-            if (consulta.getPagamento() != null) {
-                model.addAttribute("pagamento", consulta.getPagamento());
-                model.addAttribute("consulta", consulta);
-                return "pagamento/detalhes-pagamento :: content"; // CORRIGIDO
-            } else {
-                redirectAttributes.addFlashAttribute("infoMessage", "Nenhum pagamento encontrado para esta consulta. Você pode registrar um novo.");
-                return "redirect:/pagamentos/registrar/consulta/" + consultaId;
-            }
+        Optional<Pagamento> pagamentoOptional = pagamentoService.buscarPagamentoPorConsultaId(consultaId);
+        if (pagamentoOptional.isPresent()) {
+            model.addAttribute("pagamento", pagamentoOptional.get());
+            model.addAttribute("consulta", pagamentoOptional.get().getConsulta());
+            return "pagamento/detalhes-pagamento";
         } else {
-            redirectAttributes.addFlashAttribute("errorMessage", "Consulta não encontrada.");
-            return "redirect:/consultas";
+            redirectAttributes.addFlashAttribute("infoMessage", "Nenhum pagamento encontrado para esta consulta. Você pode registrar um novo.");
+            return "redirect:/pagamentos/registrar/consulta/" + consultaId;
         }
     }
 
     @GetMapping("/recibo/{pagamentoId}")
     public String emitirRecibo(@PathVariable Long pagamentoId, Model model, RedirectAttributes redirectAttributes) {
-        Optional<Pagamento> pagamentoOptional = pagamentoService.buscarPorId(pagamentoId);
+        Optional<Pagamento> pagamentoOptional = pagamentoService.buscarPagamentoPorConsultaId(pagamentoId);
         if (pagamentoOptional.isPresent()) {
             model.addAttribute("pagamento", pagamentoOptional.get());
-            return "pagamento/recibo :: content"; // CORRIGIDO
+            return "pagamento/recibo";
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "Pagamento não encontrado.");
             return "redirect:/consultas";

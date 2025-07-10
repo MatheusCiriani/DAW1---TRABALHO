@@ -1,6 +1,7 @@
 package app.odontocare.controller;
 
 import app.odontocare.model.Cliente;
+import app.odontocare.model.Usuario;
 import app.odontocare.service.ClienteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -8,6 +9,7 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import java.util.Optional;
 
 @Controller
@@ -25,31 +27,27 @@ public class ClienteController {
     public String mostrarFormularioCadastro(Model model) {
         Cliente cliente = new Cliente();
         model.addAttribute("cliente", cliente);
-        return "cliente/formulario-cliente"; // Retorna o template completo sem fragmento para nova entrada
+        return "cliente/formulario-cliente";
     }
 
     @PostMapping("/cadastrar")
     public String cadastrarCliente(@ModelAttribute("cliente") /*@Valid*/ Cliente cliente,
                                    BindingResult result,
                                    RedirectAttributes redirectAttributes) {
-        // Validação (se usar @Valid, adicionar 'jakarta.validation.Valid')
-        // if (result.hasErrors()) {
-        //     return "cliente/formulario-cliente :: content"; // Retorna o fragmento se houver erros
-        // }
         try {
             clienteService.cadastrarCliente(cliente);
             redirectAttributes.addFlashAttribute("successMessage", "Cliente cadastrado com sucesso!");
-            return "redirect:/clientes"; // Redireciona para a lista
+            return "redirect:/clientes";
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/clientes/novo"; // Redireciona de volta ao formulário com erro
+            return "redirect:/clientes/novo";
         }
     }
 
     @GetMapping
     public String listarClientes(Model model) {
-        model.addAttribute("listaClientes", clienteService.listarTodos());
-        return "cliente/lista-clientes"; // Retorna o template completo sem fragmento
+        model.addAttribute("listaClientes", clienteService.listarTodosClientes()); // MÉTODO RENOMEADO
+        return "cliente/lista-clientes";
     }
 
     @GetMapping("/editar/{id}")
@@ -57,7 +55,7 @@ public class ClienteController {
         Optional<Cliente> clienteOptional = clienteService.buscarPorId(id);
         if (clienteOptional.isPresent()) {
             model.addAttribute("cliente", clienteOptional.get());
-            return "cliente/formulario-cliente-edicao"; // Retorna o template de edição
+            return "cliente/formulario-cliente-edicao";
         } else {
             redirectAttributes.addFlashAttribute("errorMessage", "Cliente não encontrado.");
             return "redirect:/clientes";
@@ -69,18 +67,13 @@ public class ClienteController {
                                    @ModelAttribute("cliente") /*@Valid*/ Cliente cliente,
                                    BindingResult result,
                                    RedirectAttributes redirectAttributes) {
-        // if (result.hasErrors()) {
-        //    cliente.setId(id); // Garante que o ID está presente para o formulário de edição
-        //    return "cliente/formulario-cliente-edicao :: content";
-        // }
         try {
             clienteService.atualizarPerfil(id, cliente);
             redirectAttributes.addFlashAttribute("successMessage", "Cliente atualizado com sucesso!");
             return "redirect:/clientes";
-        } // Adicione um catch para UsernameNotFoundException se for usar Spring Security com UserDetailsService diretamente
-        catch (RuntimeException e) {
+        } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
-            return "redirect:/clientes/editar/" + id; // Volta para o formulário de edição com erro
+            return "redirect:/clientes/editar/" + id;
         }
     }
 
@@ -92,6 +85,6 @@ public class ClienteController {
         } catch (RuntimeException e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Erro ao deletar cliente: " + e.getMessage());
         }
-        return "redirect:/clientes"; // Redireciona de volta para a lista
+        return "redirect:/clientes";
     }
 }
