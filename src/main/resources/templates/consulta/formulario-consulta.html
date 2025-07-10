@@ -8,6 +8,7 @@
         <div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
             <h2 class="text-2xl font-bold text-center mb-6">Agendar Nova Consulta</h2>
 
+            <!-- Mensagens de erro/sucesso -->
             <div th:if="${successMessage}" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4" role="alert">
                 <span class="block sm:inline" th:text="${successMessage}"></span>
             </div>
@@ -15,17 +16,17 @@
                 <span class="block sm:inline" th:text="${errorMessage}"></span>
             </div>
 
-            <div th:if="${errorMessage}" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-                <span class="block sm:inline" th:text="${errorMessage}"></span>
-            </div>
+            <form id="formAgendamento" th:action="@{/consultas/cadastrar}" th:object="${consultaDTO}" method="post">
+                
+                <!-- ✅ CORREÇÃO: Campo oculto para garantir o envio do ID quando o select estiver desabilitado -->
+                <input type="hidden" th:if="${clienteLogado}" name="clienteId" th:value="*{clienteId}" />
 
-            <form id="formAgendamento"
-                th:action="@{/consultas/cadastrar}"
-                th:object="${consultaDTO}"
-                method="post">
+                <!-- Campo Cliente -->
                 <div class="mb-4">
                     <label for="cliente" class="block text-gray-700 text-sm font-bold mb-2">Cliente:</label>
-                    <select id="cliente" th:field="*{clienteId}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                    <select id="cliente" th:field="*{clienteId}" 
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            th:disabled="${clienteLogado}" required>
                         <option value="">-- Selecione um Cliente --</option>
                         <option th:each="cli : ${listaClientes}"
                                 th:value="${cli.id}"
@@ -33,11 +34,15 @@
                     </select>
                 </div>
 
+                <!-- ✅ CORREÇÃO: Campo oculto para garantir o envio do ID quando o select estiver desabilitado -->
+                <input type="hidden" th:if="${dentistaLogado}" name="dentistaId" th:value="*{dentistaId}" />
+
+                <!-- Campo Dentista -->
                 <div class="mb-4">
                     <label for="dentista" class="block text-gray-700 text-sm font-bold mb-2">Dentista:</label>
                     <select id="dentista" th:field="*{dentistaId}"
                             class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                            required>
+                            th:disabled="${dentistaLogado}" required>
                         <option value="">-- Selecione um Dentista --</option>
                         <option th:each="dent : ${listaDentistas}"
                                 th:value="${dent.id}"
@@ -45,37 +50,44 @@
                     </select>
                 </div>
 
+                <!-- Data da Consulta -->
                 <div class="mb-4">
                     <label for="dataAgendamento" class="block text-gray-700 text-sm font-bold mb-2">Data da Consulta:</label>
                     <input type="date" id="dataAgendamento" name="dataAgendamento"
                             class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                             th:value="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}"
-                            th:field="*{dataAgendamento}"
-                            required>
+                            th:field="*{dataAgendamento}" required>
                 </div>
                 
+                <!-- Botão HTMX -->
                 <div class="mb-4">
                     <button type="button"
                             class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                             hx-get="/consultas/horarios-disponiveis"
                             hx-target="#horariosDisponiveisContainer"
-                            hx-swap="outerHTML" hx-include="#dentista, #dataAgendamento"
-                            
-                            >
+                            hx-swap="innerHTML" 
+                            hx-include="#dentista, #dataAgendamento">
                         Buscar Horários
                     </button>
                 </div>
 
+                <!-- Container de Horários -->
+                <!-- Em formulario-consulta.html -->
+
+                <!-- O container que o HTMX vai substituir -->
                 <div id="horariosDisponiveisContainer" class="mb-4">
                     <p class="text-gray-500 text-sm mt-1">Selecione um dentista e uma data para buscar os horários disponíveis.</p>
                 </div>
 
-                <input type="hidden" id="hora" name="hora" th:field="*{hora}" required />
-                <p class="text-gray-500 text-sm mt-2">Horário selecionado: <span id="horarioSelecionadoDisplay" class="font-bold text-blue-600">Nenhum</span></p>
+                <!-- O input oculto que será atualizado pelo JavaScript do fragmento -->
+                <input type="hidden" id="horaHiddenInput" name="hora" th:field="*{hora}" required />
+                <p class="text-gray-500 text-sm mt-2">
+                    Horário selecionado: <span id="horarioSelecionadoDisplay" class="font-bold text-blue-600">Nenhum</span>
+                </p>
 
-
-
-                <div class="mb-6">
+                
+                <!-- Status (Visível apenas para Admin) -->
+                <div class="mb-6" th:if="${#authorization.expression('hasRole(''ADMIN'')')}">
                     <label for="status" class="block text-gray-700 text-sm font-bold mb-2">Status:</label>
                     <select id="status" th:field="*{status}" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
                         <option value="AGENDADA">Agendada</option>
@@ -83,7 +95,10 @@
                         <option value="REALIZADA">Realizada</option>
                     </select>
                 </div>
+                <!-- Status (Oculto para outros, default 'AGENDADA') -->
+                <input type="hidden" th:if="${not #authorization.expression('hasRole(''ADMIN'')')}" name="status" value="AGENDADA" />
 
+                <!-- Botões de Ação -->
                 <div class="flex items-center justify-between">
                     <button id="enviar" type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
                         Salvar Consulta
@@ -95,10 +110,47 @@
             </form>
         </div>
     </div>
+    <th:block layout:fragment="scriptsExtras">
+    <script>
+        console.log("Script formulário-consulta carregado!");
 
-    <div th:fragment="horariosSlotsFragmentVazio">
-        <p class="text-gray-500 text-sm mt-1">Selecione um dentista e uma data para ver os horários disponíveis.</p>
-    </div>
+        function atualizarHorarioSelecionado(selectElement) {
+            const inputHidden = document.getElementById("horaHiddenInput");
+            const display = document.getElementById("horarioSelecionadoDisplay");
+
+            if (inputHidden && selectElement) {
+                const value = selectElement.value;
+                inputHidden.value = value;
+                if (display) display.textContent = value || "Nenhum";
+                console.log(">> Horário escolhido:", value);
+            }
+        }
+
+        // Inicialização após carregamento da página
+        document.addEventListener("DOMContentLoaded", function () {
+            const select = document.getElementById("horaSelect");
+            if (select) {
+                select.addEventListener("change", function () {
+                    atualizarHorarioSelecionado(this);
+                });
+                console.log(">> onchange vinculado no load");
+            }
+        });
+
+        // HTMX: reatribuir comportamento após troca do fragmento
+        document.body.addEventListener("htmx:afterSwap", function (evt) {
+            if (evt.detail.target.id === "horariosDisponiveisContainer") {
+                const select = document.getElementById("horaSelect");
+                if (select) {
+                    select.addEventListener("change", function () {
+                        atualizarHorarioSelecionado(this);
+                    });
+                    console.log(">> onchange reatribuído via HTMX");
+                }
+            }
+        });
+    </script>
+</th:block>
 
 </body>
 </html>

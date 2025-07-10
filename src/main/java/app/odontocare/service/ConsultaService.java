@@ -1,27 +1,25 @@
 package app.odontocare.service;
 
 import app.odontocare.model.Consulta;
+import app.odontocare.dto.ConsultaDTO;
 import app.odontocare.model.Cliente;
 import app.odontocare.model.Dentista;
-import app.odontocare.model.Pagamento; // Mantido, mas não será usado devido ao escopo
 import app.odontocare.repository.ConsultaRepository;
 import app.odontocare.repository.ClienteRepository;
 import app.odontocare.repository.DentistaRepository;
-import app.odontocare.repository.PagamentoRepository; // Mantido, mas não será usado devido ao escopo
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
-import java.util.List;
 import java.util.Optional;
 import java.util.Date;
+import java.util.List;
 
 @Service
 public class ConsultaService {
@@ -30,19 +28,16 @@ public class ConsultaService {
     private final DentistaService dentistaService;
     private final ClienteRepository clienteRepository;
     private final DentistaRepository dentistaRepository;
-    private final PagamentoRepository pagamentoRepository; // Mantido, mas não será usado devido ao escopo
 
     @Autowired
     public ConsultaService(ConsultaRepository consultaRepository,
                            DentistaService dentistaService,
                            ClienteRepository clienteRepository,
-                           DentistaRepository dentistaRepository,
-                           PagamentoRepository pagamentoRepository) {
+                           DentistaRepository dentistaRepository) {
         this.consultaRepository = consultaRepository;
         this.dentistaService = dentistaService;
         this.clienteRepository = clienteRepository;
         this.dentistaRepository = dentistaRepository;
-        this.pagamentoRepository = pagamentoRepository;
     }
 
     @Transactional
@@ -65,12 +60,6 @@ public class ConsultaService {
         return consultaRepository.save(consulta);
     }
 
-    // RENOMEADO: listarTodas -> listarTodasConsultas
-    public List<Consulta> listarTodasConsultas() {
-        return consultaRepository.findAll();
-    }
-
-    // RENOMEADO: buscarPorId -> buscarConsultaPorId
     public Optional<Consulta> buscarConsultaPorId(Long id) {
         return consultaRepository.findById(id);
     }
@@ -91,58 +80,61 @@ public class ConsultaService {
         return consultaRepository.save(consulta);
     }
 
-    public List<String> buscarHorariosDisponiveis(Long dentistaId, LocalDate dataAgendamento) {
-    // Defina a agenda fixa do sistema (pode vir do banco futuramente)
-        List<String> todosHorarios = List.of(
-            "08:00", "09:00", "10:00", "11:00",
-            "13:00", "14:00", "15:00", "16:00"
-        );
-
-        // Busca todas as consultas do dentista nesta data
-        LocalDateTime inicio = dataAgendamento.atStartOfDay();
-        LocalDateTime fim = dataAgendamento.atTime(23, 59);
-
-        List<Consulta> consultasAgendadas = consultaRepository.findByDentistaIdAndDataHoraBetween(dentistaId, inicio, fim);
-
-        // Extrai os horários ocupados
-        List<String> horariosOcupados = consultasAgendadas.stream()
-            .map(consulta -> consulta.getDataHora()
-                .toInstant().atZone(ZoneId.systemDefault()).toLocalTime()
-                .withSecond(0).withNano(0).toString().substring(0, 5)) // "HH:mm"
-            .toList();
-
-        // Filtra os horários disponíveis
-        return todosHorarios.stream()
-            .filter(horario -> !horariosOcupados.contains(horario))
-            .toList();
-    }
-
-
     @Transactional
-    public Consulta atualizarConsulta(Long id, Consulta consultaAtualizada) {
+    public Consulta atualizarConsulta(Long id, ConsultaDTO consultaDTO) {
         Consulta consultaExistente = consultaRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Consulta não encontrada para atualização."));
 
-        Cliente cliente = clienteRepository.findById(consultaAtualizada.getCliente().getId())
-                .orElseThrow(() -> new RuntimeException("Cliente não encontrado para atualização da consulta."));
-        Dentista dentista = dentistaRepository.findById(consultaAtualizada.getDentista().getId())
-                .orElseThrow(() -> new RuntimeException("Dentista não encontrado para atualização da consulta."));
+        // Monta a nova data e hora a partir do DTO
+        LocalDate data = LocalDate.parse(consultaDTO.getDataAgendamento());
+        LocalTime hora = LocalTime.parse(consultaDTO.getHora());
+        LocalDateTime novaDataHora = LocalDateTime.of(data, hora);
+        Date novaDataHoraDate = Date.from(novaDataHora.atZone(ZoneId.systemDefault()).toInstant());
 
-        LocalDateTime dataHoraParaValidacao = LocalDateTime.ofInstant(consultaAtualizada.getDataHora().toInstant(), ZoneId.systemDefault());
-
-        if (!dentistaService.verificarDisponibilidade(dentista.getId(), dataHoraParaValidacao)) {
-             throw new RuntimeException("Horário indisponível para o dentista selecionado na atualização.");
+        // Valida a disponibilidade, exceto se o horário não mudou
+        if (!novaDataHora.equals(LocalDateTime.ofInstant(consultaExistente.getDataHora().toInstant(), ZoneId.systemDefault()))) {
+            if (!dentistaService.verificarDisponibilidade(consultaDTO.getDentistaId(), novaDataHora)) {
+                 throw new RuntimeException("Horário indisponível para o dentista selecionado na atualização.");
+            }
         }
 
-        consultaExistente.setDataHora(consultaAtualizada.getDataHora());
-        consultaExistente.setStatus(consultaAtualizada.getStatus());
+        // Busca as entidades relacionadas
+        Cliente cliente = clienteRepository.findById(consultaDTO.getClienteId())
+                .orElseThrow(() -> new RuntimeException("Cliente não encontrado."));
+        Dentista dentista = dentistaRepository.findById(consultaDTO.getDentistaId())
+                .orElseThrow(() -> new RuntimeException("Dentista não encontrado."));
+
+        // Atualiza os campos da entidade existente
         consultaExistente.setCliente(cliente);
         consultaExistente.setDentista(dentista);
+        consultaExistente.setDataHora(novaDataHoraDate);
+        consultaExistente.setHorario(novaDataHoraDate); // Mantendo consistência
+        consultaExistente.setStatus(consultaDTO.getStatus());
 
         return consultaRepository.save(consultaExistente);
     }
 
-    public Page<Consulta> listarPaginadas(Pageable pageable) {
+    // ✅ MÉTODOS DE LISTAGEM PAGINADA POR PERFIL
+    public Page<Consulta> listarTodasPaginadas(Pageable pageable) {
         return consultaRepository.findAll(pageable);
+    }
+
+    public Page<Consulta> listarPorClientePaginadas(Long clienteId, Pageable pageable) {
+        return consultaRepository.findByClienteId(clienteId, pageable);
+    }
+
+    public Page<Consulta> listarPorDentistaPaginadas(Long dentistaId, Pageable pageable) {
+        return consultaRepository.findByDentistaId(dentistaId, pageable);
+    }
+
+    // Em ConsultaService.java
+    public List<Consulta> listarPorDentistaNoDia(Long dentistaId, LocalDate data) {
+        LocalDateTime inicioDoDia = data.atStartOfDay();
+        LocalDateTime fimDoDia = data.atTime(LocalTime.MAX);
+        return consultaRepository.findByDentistaIdAndDataHoraBetweenOrderByDataHoraAsc(
+            dentistaId,
+            Date.from(inicioDoDia.atZone(ZoneId.systemDefault()).toInstant()),
+            Date.from(fimDoDia.atZone(ZoneId.systemDefault()).toInstant())
+        );
     }
 }

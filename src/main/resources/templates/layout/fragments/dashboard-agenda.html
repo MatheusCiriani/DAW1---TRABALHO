@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- Fragmento da Grade de Horários -->
+<div th:fragment="agenda-grid" class="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-8 gap-3">
+    
+    <!-- Loop pelos horários disponíveis/ocupados -->
+    <div th:each="horario : ${agendaDoDia}">
+        
+        <!-- Horário Disponível (Link para agendamento) -->
+        <a th:if="${horario.disponivel}"
+           th:href="@{/consultas/novo(dentistaId=${dentistaSelecionadoId}, data=${dataAtualParam}, hora=${horario.horario})}"
+           class="block p-3 text-center rounded-lg shadow-sm font-semibold text-green-800 bg-green-200 hover:bg-green-300 transition-colors">
+            <span th:text="${#temporals.format(horario.horario, 'HH:mm')}"></span>
+        </a>
+
+        <!-- Horário Ocupado (Apenas visual) -->
+        <div th:if="${!horario.disponivel}"
+             class="p-3 text-center rounded-lg shadow-sm font-semibold text-red-800 bg-red-200 cursor-not-allowed opacity-60">
+            <span th:text="${#temporals.format(horario.horario, 'HH:mm')}"></span>
+        </div>
+
+    </div>
+
+    <!-- Mensagem se não houver horários -->
+    <div th:if="${#lists.isEmpty(agendaDoDia)}" class="col-span-full text-center text-gray-500 py-4">
+        Nenhum horário de trabalho cadastrado para este dentista hoje.
+    </div>
+</div>
+
+</body>
+</html>

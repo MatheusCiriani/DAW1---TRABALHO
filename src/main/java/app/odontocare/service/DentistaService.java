@@ -1,5 +1,6 @@
 package app.odontocare.service;
 
+import app.odontocare.dto.HorarioDisponivelDTO; 
 import app.odontocare.model.Dentista;
 import app.odontocare.model.Agenda;
 import app.odontocare.model.Consulta;
@@ -180,5 +181,51 @@ public class DentistaService {
     
     public Page<Dentista> listarPaginado(Pageable pageable) {
         return dentistaRepository.findAll(pageable);
+    }
+
+    public List<HorarioDisponivelDTO> getAgendaDiaDashboard(Long dentistaId, LocalDate data) {
+        // 1. Pega todos os slots de trabalho possíveis para o dia
+        List<LocalTime> todosOsSlots = listarTodosOsSlotsDeTrabalho(dentistaId, data);
+        
+        // 2. Pega os horários já ocupados (que não estão cancelados)
+        List<LocalTime> horariosOcupados = getHorariosOcupados(dentistaId, data);
+
+        // 3. Monta a lista final de DTOs
+        return todosOsSlots.stream()
+                .map(slot -> new HorarioDisponivelDTO(slot, !horariosOcupados.contains(slot)))
+                .collect(Collectors.toList());
+    }
+
+    private List<LocalTime> listarTodosOsSlotsDeTrabalho(Long dentistaId, LocalDate data) {
+        DayOfWeek diaDaSemana = data.getDayOfWeek();
+        Optional<Agenda> agendaDoDiaOpt = agendaRepository.findByDentistaIdAndDiaDaSemana(dentistaId, diaDaSemana);
+        
+        if (agendaDoDiaOpt.isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        Agenda agendaDoDia = agendaDoDiaOpt.get();
+        List<LocalTime> todosOsSlotsPotenciais = new ArrayList<>();
+        LocalTime slotAtual = agendaDoDia.getHoraInicio();
+        while (slotAtual.isBefore(agendaDoDia.getHoraFim())) {
+            todosOsSlotsPotenciais.add(slotAtual);
+            slotAtual = slotAtual.plusMinutes(DURACAO_SLOT_MINUTOS);
+        }
+        return todosOsSlotsPotenciais;
+    }
+
+    private List<LocalTime> getHorariosOcupados(Long dentistaId, LocalDate data) {
+        LocalDateTime inicioDoDia = data.atStartOfDay();
+        LocalDateTime fimDoDia = data.atTime(LocalTime.MAX);
+
+        List<Consulta> consultasAgendadas = consultaRepository
+                .findByDentistaIdAndDataHoraBetweenAndStatusNot(dentistaId, 
+                                                  Date.from(inicioDoDia.atZone(ZoneId.systemDefault()).toInstant()),
+                                                  Date.from(fimDoDia.atZone(ZoneId.systemDefault()).toInstant()),
+                                                  "CANCELADA");
+
+        return consultasAgendadas.stream()
+                .map(consulta -> consulta.getDataHora().toInstant().atZone(ZoneId.systemDefault()).toLocalTime())
+                .collect(Collectors.toList());
     }
 }

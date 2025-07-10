@@ -1,7 +1,7 @@
-<!-- formulario-consulta-edicao.html -->
 <!DOCTYPE html>
 <html lang="pt-br" xmlns:th="http://www.thymeleaf.org"
       xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
       layout:decorate="~{layout/layoutpadrao}">
 <head>
     <title>Editar Consulta - OdontoCare</title>
@@ -11,79 +11,92 @@
     <div class="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md mt-10">
         <h2 class="text-2xl font-bold text-center mb-6">Editar Consulta</h2>
 
-        <div th:if="${successMessage}" class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
-            <span th:text="${successMessage}"></span>
-        </div>
         <div th:if="${errorMessage}" class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
             <span th:text="${errorMessage}"></span>
         </div>
 
-        <form th:action="@{/consultas/atualizar/{id}(id=${consulta.id})}" th:object="${consulta}" method="post">
-            <input type="hidden" th:field="*{id}"/>
+        <form th:action="@{/consultas/atualizar/{id}(id=${consultaId})}" th:object="${consultaDTO}" method="post">
 
+            <!-- Campo oculto para Cliente logado -->
+            <input type="hidden" th:if="${clienteLogado}" name="clienteId" th:value="*{clienteId}" />
+            
             <!-- Cliente -->
             <div class="mb-4">
                 <label for="cliente" class="block text-gray-700 text-sm font-bold mb-2">Cliente:</label>
-                <select id="cliente" th:field="*{cliente.id}" class="shadow border rounded w-full py-2 px-3" required>
-                    <option value="">-- Selecione um Cliente --</option>
+                <select id="cliente" th:field="*{clienteId}" class="shadow border rounded w-full py-2 px-3" required
+                        th:disabled="${clienteLogado}">
                     <option th:each="cli : ${listaClientes}"
                             th:value="${cli.id}"
-                            th:text="${cli.nomeCliente + ' (Email: ' + cli.email + ')'}"
-                            th:selected="${consulta.cliente != null and cli.id == consulta.cliente.id}"></option>
+                            th:text="${cli.nomeCliente}"></option>
                 </select>
             </div>
+
+            <!-- Campo oculto para Dentista logado -->
+            <input type="hidden" th:if="${dentistaLogado}" name="dentistaId" th:value="*{dentistaId}" />
 
             <!-- Dentista -->
             <div class="mb-4">
                 <label for="dentista" class="block text-gray-700 text-sm font-bold mb-2">Dentista:</label>
-                <select id="dentista" th:field="*{dentista.id}" class="shadow border rounded w-full py-2 px-3" required>
-                    <option value="">-- Selecione um Dentista --</option>
+                <select id="dentista"
+                        name="dentistaId"
+                        th:value="*{dentistaId}"
+                        class="shadow border rounded w-full py-2 px-3"
+                        required
+                        th:disabled="${dentistaLogado}">
                     <option th:each="dent : ${listaDentistas}"
                             th:value="${dent.id}"
-                            th:text="${dent.nomeAdm + ' (CRO: ' + dent.cro + ')'}"
-                            th:selected="${consulta.dentista != null and dent.id == consulta.dentista.id}"></option>
+                            th:text="${dent.nomeAdm}"></option>
                 </select>
+
             </div>
 
             <!-- Data -->
             <div class="mb-4">
-                <label for="dataAgendamentoEdicao" class="block text-gray-700 text-sm font-bold mb-2">Data da Consulta:</label>
-                <input type="date" id="dataAgendamentoEdicao" name="dataAgendamento"
-                       th:value="${#dates.format(consulta.dataHora, 'yyyy-MM-dd')}"
-                       class="shadow border rounded w-full py-2 px-3" required>
+                <label for="dataAgendamento"  class="block text-gray-700 text-sm font-bold mb-2">Data da Consulta:</label>
+                <input type="date"
+                        id="dataAgendamento"
+                        name="dataAgendamento"
+                        th:value="*{dataAgendamento}"
+                        class="shadow border rounded w-full py-2 px-3"
+                        required />
             </div>
 
             <!-- Botão buscar horários -->
             <div class="mb-4">
                 <button type="button"
-                        class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded"
-                        hx-get="@{/consultas/horarios-disponiveis}"
-                        hx-target="#horariosDisponiveisContainer"
-                        hx-swap="innerHTML"
-                        hx-include="#dentista, #dataAgendamentoEdicao">
-                    Buscar Horários
-                </button>
+                    hx-get="/consultas/horarios-disponiveis"
+                    hx-target="#horariosContainer"
+                    hx-swap="innerHTML"
+                    hx-include="[name='dentistaId'], [name='dataAgendamento']">
+                Buscar Horários
+            </button>
+
             </div>
 
-            <!-- Container dos horários disponíveis -->
-            <div id="horariosDisponiveisContainer" class="mb-4"
-                th:replace="~{consulta/horarios :: horariosSelectFragment(horarios=${horarios}, dataAgendamento=${#dates.format(consulta.dataHora, 'yyyy-MM-dd')}, consulta=${consulta})}">
+            <!-- Campo dos horários -->
+            <div id="horariosContainer" class="mb-4">
+                <label for="horaSelect" class="block text-gray-700 text-sm font-bold mb-2">Horário:</label>
+
+                <select id="horaSelect"
+                        class="shadow border rounded w-full py-2 px-3"
+                        required>
+                    <option th:value="*{hora}" th:text="*{hora}"></option>
+                </select>
+
+                <!-- Campo oculto será criado aqui -->
+                <div id="hiddenHoraContainer"></div>
+
+                <p class="text-xs text-gray-500 mt-1">Clique em 'Buscar Horários' para ver outras opções.</p>
             </div>
 
+            <!-- Campo oculto que será atualizado com o horário selecionado -->
+            <input type="hidden" id="horaHiddenInput" name="hora" th:value="*{hora}" />
 
-            <!-- Campo hidden que será preenchido dinamicamente com dataHora -->
-            <!-- Campo oculto onde o valor 'YYYY-MM-DDTHH:mm' será preenchido dinamicamente -->
-            <input type="hidden" id="dataHoraCompletaInput" th:field="*{dataHora}" required />
+            
+            <!-- <input type="hidden" id="horaInput" th:field="*{hora}" /> -->
 
-            <p class="text-sm text-gray-500 mt-2">
-                Horário selecionado:
-                <span id="horarioSelecionadoDisplay" class="font-bold text-blue-600"
-                    th:text="${#dates.format(consulta.dataHora, 'HH:mm')}">--:--</span>
-            </p>
-
-
-            <!-- Status -->
-            <div class="mb-6">
+            <!-- Status: Visível apenas para ADMIN e DENTISTA -->
+            <div class="mb-6" sec:authorize="hasAnyRole('ADMIN', 'DENTISTA')">
                 <label for="status" class="block text-gray-700 text-sm font-bold mb-2">Status:</label>
                 <select id="status" th:field="*{status}" class="shadow border rounded w-full py-2 px-3" required>
                     <option value="AGENDADA">Agendada</option>
@@ -91,6 +104,8 @@
                     <option value="REALIZADA">Realizada</option>
                 </select>
             </div>
+            <!-- Campo oculto para manter o status para o CLIENTE -->
+            <input type="hidden" th:if="${#authorization.expression('hasRole(''CLIENTE'')')}" name="status" th:value="*{status}" />
 
             <!-- Botões -->
             <div class="flex items-center justify-between">
@@ -102,5 +117,38 @@
         </form>
     </div>
 </div>
+
+<th:block layout:fragment="scriptsExtras">
+    <script>
+        console.log("Script carregado!");
+
+        function atualizarHorarioSelecionado(selectElement) {
+            const inputHidden = document.getElementById("horaHiddenInput");
+            if (inputHidden) {
+                inputHidden.value = selectElement.value;
+                console.log(">> Horário selecionado:", selectElement.value);
+            } else {
+                console.warn(">> Campo oculto horaHiddenInput não encontrado!");
+            }
+        }
+
+        document.body.addEventListener("htmx:afterSwap", function (evt) {
+            if (evt.detail.target.id === "horariosContainer") {
+                const select = document.getElementById("horaSelect");
+                if (select) {
+                    select.addEventListener("change", function () {
+                        atualizarHorarioSelecionado(this);
+                    });
+                    console.log(">> onchange reatribuído após HTMX");
+                }
+            }
+        });
+    </script>
+</th:block>
+
+
+
+
+
 </body>
 </html>

@@ -3,6 +3,8 @@ package app.odontocare.repository; // PACOTE CORRIGIDO
 import app.odontocare.model.Consulta; // PACOTE CORRIGIDO
 import app.odontocare.model.Dentista; // PACOTE CORRIGIDO
 import app.odontocare.model.Cliente; // PACOTE CORRIGIDO
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -17,4 +19,11 @@ public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
     List<Consulta> findByDentistaAndDataHoraBetween(Dentista dentista, Date inicio, Date fim);
     List<Consulta> findByDentistaIdAndDataHoraBetween(Long dentistaId, LocalDateTime inicio, LocalDateTime fim);
     List<Consulta> findByDentistaIdAndDataHoraBetweenAndStatusNot(Long dentistaId, Date inicioDoDia, Date fimDoDia, String status);
+
+    Page<Consulta> findByClienteId(Long clienteId, Pageable pageable);
+    Page<Consulta> findByDentistaId(Long dentistaId, Pageable pageable);
+
+    // Em ConsultaRepository.java
+List<Consulta> findByDentistaIdAndDataHoraBetweenOrderByDataHoraAsc(Long dentistaId, Date inicio, Date fim);
+
 }

@@ -1,40 +1,26 @@
-<!-- src/main/resources/templates/consulta/horarios.html -->
 <!DOCTYPE html>
 <html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <title>Fragmento de Horários</title>
-</head>
 <body>
 
-<div th:fragment="horariosSelectFragment (horarios, dataAgendamento)">
-    <label for="dataHora" class="block text-gray-700 text-sm font-bold mb-2">Horário da Consulta:</label>
-    <select id="dataHora"
-            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            required
-            onchange="
-                var selectedOption = this.options[this.selectedIndex];
-                // Atualiza o texto exibido do horário selecionado
-                document.getElementById('horarioSelecionadoDisplay').textContent = selectedOption.text;
-                
-                // Preenche o campo oculto correto com a hora ou datetime completo
-                var horaInput = document.getElementById('hora');
-                if (horaInput) {
-                    horaInput.value = selectedOption.text;
-                }
+<!-- 
+  ✅ CORREÇÃO:
+  - O <select> agora tem um 'id' único ("horarioSelector") e NÃO tem o atributo 'name'.
+  - O evento 'onchange' usa JavaScript para encontrar o input oculto com id="hora" no formulário principal e colocar o valor nele.
+  - Ele também atualiza o texto de "Horário selecionado" para o usuário ver.
+-->
+<div th:fragment="horariosSelectFragment (horarios)">
+    <label for="horaSelect" class="block text-gray-700 text-sm font-bold mb-2">Horário:</label>
 
-                var dataHoraInput = document.getElementById('dataHoraCompletaInput');
-                if (dataHoraInput) {
-                    dataHoraInput.value = selectedOption.value;
-                }
-            ">
+    <select id="horaSelect"
+            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            required>
         <option value="">-- Selecione um Horário --</option>
-        <option th:each="horario : ${horarios}"
-                th:value="${dataAgendamento + 'T' + horario}"
-                th:text="${horario}">
-        </option>
+        <option th:each="h : ${horarios}" th:value="${h}" th:text="${h}"></option>
         <option th:if="${#lists.isEmpty(horarios)}" value="" disabled>Nenhum horário disponível</option>
     </select>
 </div>
+
+
 
 </body>
 </html>
