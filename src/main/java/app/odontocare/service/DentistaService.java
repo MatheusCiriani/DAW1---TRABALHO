@@ -1,6 +1,6 @@
 package app.odontocare.service;
 
-import app.odontocare.dto.HorarioDisponivelDTO; 
+import app.odontocare.dto.HorarioDisponivelDTO;
 import app.odontocare.model.Dentista;
 import app.odontocare.model.Agenda;
 import app.odontocare.model.Consulta;
@@ -173,10 +173,23 @@ public class DentistaService {
 
     @Transactional
     public void deletarDentista(Long id) {
-        if (!dentistaRepository.existsById(id)) {
-            throw new RuntimeException("Dentista não encontrado com id: " + id);
+        Dentista dentista = dentistaRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Dentista não encontrado com id: " + id));
+
+        // ✅ 1. VERIFICA SE EXISTEM AGENDAS VINCULADAS
+        List<Agenda> agendasDoDentista = agendaRepository.findByDentista(dentista);
+        if (!agendasDoDentista.isEmpty()) {
+            throw new RuntimeException("Este dentista não pode ser excluído pois possui horários de trabalho (agendas) associados.");
         }
-        dentistaRepository.deleteById(id);
+
+        // ✅ 2. VERIFICA SE EXISTEM CONSULTAS VINCULADAS
+        List<Consulta> consultasDoDentista = consultaRepository.findByDentista(dentista);
+        if (!consultasDoDentista.isEmpty()) {
+            throw new RuntimeException("Este dentista não pode ser excluído pois possui um histórico de consultas associado.");
+        }
+
+        // ✅ 3. SE PASSAR NAS VERIFICAÇÕES, DELETA O DENTISTA
+        dentistaRepository.delete(dentista);
     }
     
     public Page<Dentista> listarPaginado(Pageable pageable) {

@@ -114,7 +114,6 @@ public class ConsultaService {
         return consultaRepository.save(consultaExistente);
     }
 
-    // ✅ MÉTODO ATUALIZADO para ADMIN
     public Page<Consulta> listarTodasPaginadas(String nome, Pageable pageable) {
         if (nome != null && !nome.trim().isEmpty()) {
             return consultaRepository.findByClienteNomeClienteContainingIgnoreCase(nome, pageable);
@@ -127,7 +126,6 @@ public class ConsultaService {
         return consultaRepository.findByClienteId(clienteId, pageable);
     }
 
-    // ✅ MÉTODO ATUALIZADO para DENTISTA
     public Page<Consulta> listarPorDentistaPaginadas(Long dentistaId, String nome, Pageable pageable) {
         if (nome != null && !nome.trim().isEmpty()) {
             return consultaRepository.findByDentistaIdAndClienteNomeClienteContainingIgnoreCase(dentistaId, nome, pageable);
@@ -147,7 +145,6 @@ public class ConsultaService {
         );
     }
 
-    // ... dentro da classe ConsultaService
 
     /**
      * ✅ NOVO: Lista todas as consultas de um cliente específico em uma data específica, ordenadas por hora.
@@ -164,5 +161,14 @@ public class ConsultaService {
         Date fim = Date.from(fimDoDia.atZone(ZoneId.systemDefault()).toInstant());
 
         return consultaRepository.findByClienteIdAndDataHoraBetweenOrderByDataHoraAsc(clienteId, inicio, fim);
+    }
+
+    // ✅ NOVO MÉTODO PARA DELETAR PERMANENTEMENTE A CONSULTA
+    @Transactional
+    public void deletarConsulta(Long id) {
+        if (!consultaRepository.existsById(id)) {
+            throw new RuntimeException("Consulta não encontrada para exclusão.");
+        }
+        consultaRepository.deleteById(id);
     }
 }

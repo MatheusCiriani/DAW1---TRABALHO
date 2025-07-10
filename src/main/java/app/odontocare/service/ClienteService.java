@@ -1,6 +1,8 @@
 package app.odontocare.service;
 
 import app.odontocare.model.Cliente;
+import app.odontocare.model.Consulta; // ✅ IMPORT NECESSÁRIO
+import app.odontocare.repository.ConsultaRepository; // ✅ IMPORT NECESSÁRIO
 import app.odontocare.model.Papel;
 import app.odontocare.repository.ClienteRepository;
 import app.odontocare.repository.UsuarioRepository;
@@ -37,16 +39,19 @@ public class ClienteService {
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
     private final PapelRepository papelRepository;
+    private final ConsultaRepository consultaRepository;
 
     @Autowired
     public ClienteService(ClienteRepository clienteRepository,
                           UsuarioRepository usuarioRepository,
                           PasswordEncoder passwordEncoder,
-                          PapelRepository papelRepository) {
+                          PapelRepository papelRepository,
+                          ConsultaRepository consultaRepository) {
         this.clienteRepository = clienteRepository;
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
         this.papelRepository = papelRepository;
+        this.consultaRepository = consultaRepository; 
     }
 
     @Transactional
@@ -121,9 +126,16 @@ public class ClienteService {
 
     @Transactional
     public void deletarCliente(Long id) {
-        if (!clienteRepository.existsById(id)) {
-            throw new RuntimeException("Cliente não encontrado com id: " + id);
+        Cliente cliente = clienteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Cliente não encontrado com id: " + id));
+
+        // ✅ NOVA VERIFICAÇÃO ANTES DE DELETAR
+        List<Consulta> consultasDoCliente = consultaRepository.findByCliente(cliente);
+        if (!consultasDoCliente.isEmpty()) {
+            throw new RuntimeException("Este cliente não pode ser excluído pois possui um histórico de consultas.");
         }
+
+        // Se a verificação passar, a exclusão acontece normalmente
         clienteRepository.deleteById(id);
     }
 

@@ -291,4 +291,16 @@ public class ConsultaController {
         return "consulta/horarios :: horariosSelectFragment";
     }
 
+    // ✅ NOVO ENDPOINT PARA DELETAR A CONSULTA
+    @GetMapping("/deletar/{id}")
+    public String deletarConsulta(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            consultaService.deletarConsulta(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Consulta deletada com sucesso!");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Erro ao deletar consulta: " + e.getMessage());
+        }
+        return "redirect:/consultas";
+    }
+
 }
