@@ -114,17 +114,26 @@ public class ConsultaService {
         return consultaRepository.save(consultaExistente);
     }
 
-    // ✅ MÉTODOS DE LISTAGEM PAGINADA POR PERFIL
-    public Page<Consulta> listarTodasPaginadas(Pageable pageable) {
-        return consultaRepository.findAll(pageable);
+    // ✅ MÉTODO ATUALIZADO para ADMIN
+    public Page<Consulta> listarTodasPaginadas(String nome, Pageable pageable) {
+        if (nome != null && !nome.trim().isEmpty()) {
+            return consultaRepository.findByClienteNomeClienteContainingIgnoreCase(nome, pageable);
+        } else {
+            return consultaRepository.findAll(pageable);
+        }
     }
 
     public Page<Consulta> listarPorClientePaginadas(Long clienteId, Pageable pageable) {
         return consultaRepository.findByClienteId(clienteId, pageable);
     }
 
-    public Page<Consulta> listarPorDentistaPaginadas(Long dentistaId, Pageable pageable) {
-        return consultaRepository.findByDentistaId(dentistaId, pageable);
+    // ✅ MÉTODO ATUALIZADO para DENTISTA
+    public Page<Consulta> listarPorDentistaPaginadas(Long dentistaId, String nome, Pageable pageable) {
+        if (nome != null && !nome.trim().isEmpty()) {
+            return consultaRepository.findByDentistaIdAndClienteNomeClienteContainingIgnoreCase(dentistaId, nome, pageable);
+        } else {
+            return consultaRepository.findByDentistaId(dentistaId, pageable);
+        }
     }
 
     // Em ConsultaService.java
@@ -136,5 +145,24 @@ public class ConsultaService {
             Date.from(inicioDoDia.atZone(ZoneId.systemDefault()).toInstant()),
             Date.from(fimDoDia.atZone(ZoneId.systemDefault()).toInstant())
         );
+    }
+
+    // ... dentro da classe ConsultaService
+
+    /**
+     * ✅ NOVO: Lista todas as consultas de um cliente específico em uma data específica, ordenadas por hora.
+     * @param clienteId O ID do cliente.
+     * @param data A data para a qual as consultas serão buscadas.
+     * @return Uma lista de consultas do cliente para o dia especificado.
+     */
+    public List<Consulta> listarPorClienteNoDia(Long clienteId, LocalDate data) {
+        LocalDateTime inicioDoDia = data.atStartOfDay();
+        LocalDateTime fimDoDia = data.atTime(LocalTime.MAX);
+
+        // Converte LocalDateTime para Date para ser compatível com o tipo no repositório
+        Date inicio = Date.from(inicioDoDia.atZone(ZoneId.systemDefault()).toInstant());
+        Date fim = Date.from(fimDoDia.atZone(ZoneId.systemDefault()).toInstant());
+
+        return consultaRepository.findByClienteIdAndDataHoraBetweenOrderByDataHoraAsc(clienteId, inicio, fim);
     }
 }

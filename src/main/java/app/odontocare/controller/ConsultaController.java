@@ -21,7 +21,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.time.LocalDate;
 import java.time.DayOfWeek;
@@ -45,24 +46,43 @@ public class ConsultaController {
     @Autowired private DentistaService dentistaService;
     @Autowired private UsuarioRepository usuarioRepository;
 
+    // ✅ MÉTODO LISTAR CONSULTAS TOTALMENTE ATUALIZADO
     @GetMapping
-    public String listarConsultas(@RequestParam(defaultValue = "0") int page, Model model, Authentication authentication) {
+    public String listarConsultas(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "dataHora") String sort, // Ordenar por data por padrão
+            @RequestParam(defaultValue = "desc") String order,
+            @RequestParam(required = false) String nome, // Nome do cliente para buscar
+            Model model, Authentication authentication) {
+        
         UserDetails userDetails = (UserDetails) authentication.getPrincipal();
         Usuario usuarioLogado = usuarioRepository.findByLogin(userDetails.getUsername())
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
+        Sort.Direction direction = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        // Para ordenar por nome do cliente/dentista, usamos a notação "entidade.campo"
+        Pageable pageable = PageRequest.of(page, 5, Sort.by(direction, sort)); 
+        
         Page<Consulta> pagina;
-        PageRequest pageRequest = PageRequest.of(page, 5);
 
         if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
-            pagina = consultaService.listarTodasPaginadas(pageRequest);
+            pagina = consultaService.listarTodasPaginadas(nome, pageable);
         } else if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DENTISTA"))) {
-            pagina = consultaService.listarPorDentistaPaginadas(usuarioLogado.getId(), pageRequest);
-        } else { // ROLE_CLIENTE
-            pagina = consultaService.listarPorClientePaginadas(usuarioLogado.getId(), pageRequest);
+            pagina = consultaService.listarPorDentistaPaginadas(usuarioLogado.getId(), nome, pageable);
+        } else { // ROLE_CLIENTE - busca por nome não se aplica aqui
+            pagina = consultaService.listarPorClientePaginadas(usuarioLogado.getId(), pageable);
         }
 
         model.addAttribute("pagina", pagina);
+        model.addAttribute("sort", sort);
+        model.addAttribute("order", order);
+        model.addAttribute("nome", nome);
+        model.addAttribute("reverseOrder", "asc".equals(order) ? "desc" : "asc");
+
+        // Para esconder a busca para o cliente na view
+        model.addAttribute("isCliente", authentication.getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_CLIENTE")));
+
         return "consulta/lista-consultas";
     }
 

@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 import io.github.wimdeblauwe.htmx.spring.boot.mvc.HxRequest;
 
@@ -30,43 +31,82 @@ public class HomeController {
     @Autowired private UsuarioRepository usuarioRepository;
 
     @GetMapping("/")
-    public String index(Model model, Authentication authentication) {
+    public String index(Model model, Authentication authentication, 
+                        @RequestParam(name = "dentistaId", required = false) Long dentistaId) { // ✅ Parâmetro adicionado
         LocalDate hoje = LocalDate.now();
         model.addAttribute("dataAtualFormatada", formatarData(hoje));
-        model.addAttribute("dataAtualParam", hoje); // Para os links
+        model.addAttribute("dataAtualParam", hoje);
 
         if (authentication != null && authentication.isAuthenticated()) {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             Usuario usuarioLogado = usuarioRepository.findByLogin(userDetails.getUsername()).get();
+            Long usuarioId = usuarioLogado.getId();
 
-            if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DENTISTA"))) {
+            if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+                model.addAttribute("isAdmin", true);
+                List<Dentista> dentistas = dentistaService.listarTodosDentistas();
+                model.addAttribute("listaDentistas", dentistas);
+
+                Long dentistaSelecionadoId = dentistaId;
+
+                // Se nenhum dentista foi selecionado via URL, seleciona o primeiro da lista como padrão
+                if (dentistaSelecionadoId == null && !dentistas.isEmpty()) {
+                    dentistaSelecionadoId = dentistas.get(0).getId();
+                }
+
+                if (dentistaSelecionadoId != null) {
+                    final Long finalDentistaId = dentistaSelecionadoId;
+                    Optional<Dentista> dentistaSelecionadoOpt = dentistas.stream()
+                        .filter(d -> d.getId().equals(finalDentistaId)).findFirst();
+                    
+                    if(dentistaSelecionadoOpt.isPresent()){
+                        model.addAttribute("dentistaSelecionado", dentistaSelecionadoOpt.get());
+                        model.addAttribute("dentistaSelecionadoId", finalDentistaId);
+                        
+                        // Busca as consultas e a agenda do DENTISTA SELECIONADO
+                        List<Consulta> consultasDoDia = consultaService.listarPorDentistaNoDia(finalDentistaId, hoje);
+                        List<HorarioDisponivelDTO> agendaDoDia = dentistaService.getAgendaDiaDashboard(finalDentistaId, hoje);
+                        
+                        model.addAttribute("consultasDoDia", consultasDoDia);
+                        model.addAttribute("agendaDoDia", agendaDoDia);
+                    }
+                }
+
+            } else if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_DENTISTA"))) {
                 model.addAttribute("isDentista", true);
                 model.addAttribute("dentistaLogado", usuarioLogado);
-                // Busca as consultas do dia para o dentista
                 List<Consulta> consultasDoDia = consultaService.listarPorDentistaNoDia(usuarioLogado.getId(), hoje);
+                List<HorarioDisponivelDTO> agendaDoDia = dentistaService.getAgendaDiaDashboard(usuarioLogado.getId(), hoje);
                 model.addAttribute("consultasDoDia", consultasDoDia);
+                model.addAttribute("agendaDoDia", agendaDoDia);
 
             } else if (authentication.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_CLIENTE"))) {
                 model.addAttribute("isCliente", true);
+                
+                // ✅ NOVO: Busca as consultas do cliente para o dia atual
+                List<Consulta> consultasDoDia = consultaService.listarPorClienteNoDia(usuarioId, hoje);
+                model.addAttribute("consultasDoDia", consultasDoDia);
+
+                // Seção de agendamento (sem alteração)
                 List<Dentista> dentistas = dentistaService.listarTodosDentistas();
                 model.addAttribute("listaDentistas", dentistas);
                 
-                // Carrega a agenda do primeiro dentista da lista por padrão
                 if (!dentistas.isEmpty()) {
                     Dentista dentistaPadrao = dentistas.get(0);
                     model.addAttribute("dentistaSelecionadoId", dentistaPadrao.getId());
                     List<HorarioDisponivelDTO> agenda = dentistaService.getAgendaDiaDashboard(dentistaPadrao.getId(), hoje);
                     model.addAttribute("agendaDoDia", agenda);
                 }
-            } else { // ADMIN
-                model.addAttribute("isAdmin", true);
+
             }
         }
 
-        return "home/index"; // Sempre renderiza a mesma página, que se adapta com th:if
+        return "home/index";
     }
 
-    // Endpoint HTMX para atualizar a grade de horários do cliente
+    
+
+
     @HxRequest
     @GetMapping("/dashboard/agenda-dentista")
     public String getAgendaParaDashboard(@RequestParam Long dentistaId, Model model) {

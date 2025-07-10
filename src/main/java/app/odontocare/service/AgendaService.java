@@ -100,7 +100,12 @@ public class AgendaService {
         return agendaRepository.findByDentista(dentista);
     }
 
-    public Page<Agenda> listarPaginado(Pageable pageable) {
-        return agendaRepository.findAll(pageable);
+    // ✅ MÉTODO ATUALIZADO para aceitar o nome do dentista na busca
+    public Page<Agenda> listarPaginado(String nomeDentista, Pageable pageable) {
+        if (nomeDentista != null && !nomeDentista.trim().isEmpty()) {
+            return agendaRepository.findByDentistaNomeAdmContainingIgnoreCase(nomeDentista, pageable);
+        } else {
+            return agendaRepository.findAll(pageable);
+        }
     }
 }

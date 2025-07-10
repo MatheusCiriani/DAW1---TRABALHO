@@ -9,114 +9,185 @@
 <body>
 <div layout:fragment="conteudo">
     
-    <!-- Seção do ADMIN (Layout antigo de cards) -->
     <div th:if="${isAdmin}" class="container mx-auto mt-8 p-4">
         <div class="bg-white rounded-lg shadow-md p-6">
-            <h1 class="text-3xl font-bold text-center text-blue-600 mb-6">Painel Administrativo</h1>
-            <p class="text-lg text-gray-700 text-center mb-8">
-                Selecione uma das opções abaixo para gerenciar o sistema.
-            </p>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                 <!-- Gerenciar Clientes -->
-                <div class="p-4 border rounded-lg shadow-sm text-center">
-                    <h2 class="text-xl font-semibold mb-2">Gerenciar Clientes</h2>
-                    <a th:href="@{/clientes}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Ir para Clientes</a>
+            
+            <form th:action="@{/}" method="GET" class="mb-6 pb-6 border-b">
+                <label for="dentistaSelector" class="block text-gray-700 text-lg font-bold mb-2">Visualizando agenda como Administrador</label>
+                <div class="flex items-center space-x-4">
+                    <select id="dentistaSelector" name="dentistaId" 
+                            class="shadow border rounded w-full md:w-1/2 py-2 px-3"
+                            onchange="this.form.submit()">
+                        <option value="">Selecione um dentista...</option>
+                        <option th:each="dent : ${listaDentistas}"
+                                th:value="${dent.id}"
+                                th:text="${dent.nomeAdm}"
+                                th:selected="${dent.id == dentistaSelecionadoId}"></option>
+                    </select>
+                    <noscript><button type="submit" class="bg-blue-500 text-white py-2 px-4 rounded">Ver Agenda</button></noscript>
                 </div>
-                <!-- Gerenciar Dentistas -->
-                <div class="p-4 border rounded-lg shadow-sm text-center">
-                    <h2 class="text-xl font-semibold mb-2">Gerenciar Dentistas</h2>
-                    <a th:href="@{/dentistas}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Ir para Dentistas</a>
+            </form>
+
+            <div th:if="${dentistaSelecionado != null}">
+                <h1 class="text-2xl font-bold text-blue-700" th:text="'Agenda de ' + ${dentistaSelecionado.nomeAdm}"></h1>
+                <p class="text-lg text-gray-600 mt-1" th:text="${dataAtualFormatada}"></p>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4">Consultas Agendadas de Hoje</h2>
+                        <div th:if="${#lists.isEmpty(consultasDoDia)}" class="text-center text-gray-500 p-6 border rounded-lg">
+                            Nenhuma consulta agendada para hoje.
+                        </div>
+                        <ul th:if="${not #lists.isEmpty(consultasDoDia)}" class="space-y-3">
+                            <li th:each="consulta : ${consultasDoDia}" class="p-4 border rounded-lg flex justify-between items-center">
+                                <div>
+                                    <span class="font-bold text-blue-600" th:text="${#dates.format(consulta.dataHora, 'HH:mm')}"></span>
+                                    <span class="ml-4 font-medium" th:text="${consulta.cliente.nomeCliente}"></span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="block px-3 py-1 text-sm font-semibold rounded-full mb-2"
+                                        th:text="${consulta.status}"
+                                        th:classappend="${consulta.status == 'AGENDADA'} ? 'bg-yellow-200 text-yellow-800' : 'bg-red-200 text-red-800'">
+                                    </span>
+                                    <div class="flex space-x-2 justify-end">
+                                        <a th:href="@{/consultas/editar/{id}(id=${consulta.id})}" class="text-blue-600 hover:text-blue-800 text-sm font-semibold">Editar</a>
+                                        <a th:href="@{/consultas/cancelar/{id}(id=${consulta.id})}" class="text-red-600 hover:text-red-800 text-sm font-semibold"
+                                        onclick="return confirm('Tem certeza que deseja cancelar esta consulta?');">Cancelar</a>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800 mb-4">Horários de Hoje</h2>
+                        <div th:if="${#lists.isEmpty(agendaDoDia)}" class="text-center text-gray-500 p-6 border rounded-lg">
+                            Não há horários configurados para hoje.
+                        </div>
+                        <div th:if="${not #lists.isEmpty(agendaDoDia)}" class="grid grid-cols-4 gap-2">
+                            <div th:each="item : ${agendaDoDia}" 
+                                th:classappend="${item.disponivel} ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-500'"
+                                class="p-2 text-center rounded-md text-sm font-medium">
+                                <span th:text="${#temporals.format(item.horario, 'HH:mm')}"></span>
+                                <span th:if="${!item.disponivel}" class="text-xs block">(Ocupado)</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <!-- Gerenciar Agendas -->
-                <div class="p-4 border rounded-lg shadow-sm text-center">
-                    <h2 class="text-xl font-semibold mb-2">Gerenciar Agendas</h2>
-                    <a th:href="@{/agendas}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Ir para Agendas</a>
-                </div>
-                <!-- Gerenciar Consultas -->
-                <div class="p-4 border rounded-lg shadow-sm text-center">
-                    <h2 class="text-xl font-semibold mb-2">Todas as Consultas</h2>
-                    <a th:href="@{/consultas}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">Ir para Consultas</a>
-                </div>
-                <!-- Emitir Relatórios -->
-                <div class="p-4 border rounded-lg shadow-sm text-center">
-                    <h2 class="text-xl font-semibold mb-2">Emitir Relatórios</h2>
-                    <a th:href="@{/relatorios}" class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded">Ir para Relatórios</a>
-                </div>
+            </div>
+            
+            <div th:if="${dentistaSelecionado == null}" class="text-center text-gray-500 p-6">
+                <p>Por favor, selecione um dentista acima para visualizar a agenda.</p>
             </div>
         </div>
     </div>
 
-    <!-- Seção do DENTISTA -->
     <div th:if="${isDentista}" class="container mx-auto mt-8 p-4">
         <div class="bg-white rounded-lg shadow-md p-6">
             <h1 class="text-2xl font-bold text-blue-700" th:text="'Bem-vindo(a), ' + ${dentistaLogado.nomeAdm} + '!'"></h1>
             <p class="text-lg text-gray-600 mt-1" th:text="${dataAtualFormatada}"></p>
             
-            <h2 class="text-xl font-semibold text-gray-800 mt-8 mb-4">Suas Consultas de Hoje</h2>
-            <div th:if="${#lists.isEmpty(consultasDoDia)}" class="text-center text-gray-500 p-6 border rounded-lg">
-                Você não possui consultas agendadas para hoje.
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Suas Consultas Agendadas de Hoje</h2>
+                    <div th:if="${#lists.isEmpty(consultasDoDia)}" class="text-center text-gray-500 p-6 border rounded-lg">
+                        Você não possui consultas agendadas para hoje.
+                    </div>
+                    <ul th:if="${not #lists.isEmpty(consultasDoDia)}" class="space-y-3">
+                        <li th:each="consulta : ${consultasDoDia}" class="p-4 border rounded-lg flex justify-between items-center">
+                            <div>
+                                <span class="font-bold text-blue-600" th:text="${#dates.format(consulta.dataHora, 'HH:mm')}"></span>
+                                <span class="ml-4 font-medium" th:text="${consulta.cliente.nomeCliente}"></span>
+                            </div>
+                            <div class="text-right">
+                                <span class="block px-3 py-1 text-sm font-semibold rounded-full mb-2"
+                                      th:text="${consulta.status}"
+                                      th:classappend="${consulta.status == 'AGENDADA'} ? 'bg-yellow-200 text-yellow-800' : 'bg-red-200 text-red-800'">
+                                </span>
+                                <div class="flex space-x-2 justify-end" sec:authorize="hasAnyRole('ADMIN', 'DENTISTA')">
+                                    <a th:href="@{/consultas/editar/{id}(id=${consulta.id})}" class="text-blue-600 hover:text-blue-800 text-sm font-semibold">Editar</a>
+                                    <a th:href="@{/consultas/cancelar/{id}(id=${consulta.id})}" class="text-red-600 hover:text-red-800 text-sm font-semibold"
+                                    onclick="return confirm('Tem certeza que deseja cancelar esta consulta?');">Cancelar</a>
+                                </div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Sua Agenda de Horários de Hoje</h2>
+                    <div th:if="${#lists.isEmpty(agendaDoDia)}" class="text-center text-gray-500 p-6 border rounded-lg">
+                        Não há horários configurados para hoje.
+                    </div>
+                    <div th:if="${not #lists.isEmpty(agendaDoDia)}" class="grid grid-cols-4 gap-2">
+                        <div th:each="item : ${agendaDoDia}" 
+                             th:classappend="${item.disponivel} ? 'bg-green-100 text-green-800' : 'bg-gray-200 text-gray-500'"
+                             class="p-2 text-center rounded-md text-sm font-medium">
+                            <span th:text="${#temporals.format(item.horario, 'HH:mm')}"></span>
+                            <span th:if="${!item.disponivel}" class="text-xs block">(Ocupado)</span>
+                        </div>
+                    </div>
+                     <div class="mt-4 text-center">
+                        <a th:href="@{/consultas/novo}" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                            Agendar Nova Consulta
+                        </a>
+                    </div>
+                </div>
             </div>
-            <!-- Em index.html, dentro da seção do Dentista -->
-
-            <ul th:if="${not #lists.isEmpty(consultasDoDia)}" class="space-y-3">
-                <li th:each="consulta : ${consultasDoDia}" class="p-4 border rounded-lg flex justify-between items-center">
-                    
-                    <!-- Informações da Consulta (sem alteração) -->
-                    <div>
-                        <span class="font-bold text-blue-600" th:text="${#dates.format(consulta.dataHora, 'HH:mm')}"></span>
-                        <span class="ml-4 font-medium" th:text="${consulta.cliente.nomeCliente}"></span>
-                    </div>
-                    <div>
-                        <div class="pb-2">
-                            <span class="px-3 py-1 text-sm font-semibold rounded-full"
-                                th:text="${consulta.status}"
-                                th:classappend="${consulta.status == 'AGENDADA'} ? 'bg-yellow-200 text-yellow-800' : (${consulta.status == 'REALIZADA'} ? 'bg-green-200 text-green-800' : 'bg-red-200 text-red-800')">
-                            </span>
-
-                        </div>
-    
-                        <!-- ✅ BOTÕES DE AÇÃO ADICIONADOS AQUI -->
-                        <div class="flex space-x-2" sec:authorize="hasAnyRole('ADMIN', 'DENTISTA')">
-                            <a th:href="@{/consultas/editar/{id}(id=${consulta.id})}" class="text-blue-600 hover:text-blue-800 text-sm font-semibold">Editar</a>
-                            <a th:href="@{/consultas/cancelar/{id}(id=${consulta.id})}" class="text-red-600 hover:text-red-800 text-sm font-semibold"
-                            onclick="return confirm('Tem certeza que deseja cancelar esta consulta?');">Cancelar</a>
-                        </div>
-                    </div>
-                    <!-- Status da Consulta (sem alteração) -->
-
-                </li>
-            </ul>
         </div>
     </div>
 
-    <!-- Seção do CLIENTE -->
     <div th:if="${isCliente}" class="container mx-auto mt-8 p-4">
         <div class="bg-white rounded-lg shadow-md p-6">
-            <h1 class="text-2xl font-bold text-blue-700">Agende sua Consulta</h1>
-            <p class="text-lg text-gray-600 mt-1" th:text="${dataAtualFormatada}"></p>
-
-            <!-- Seletor de Dentista -->
-            <div class="mt-8 mb-4">
-                <label for="dentistaSelector" class="block text-gray-700 text-sm font-bold mb-2">Selecione um Dentista para ver a agenda:</label>
-                <select id="dentistaSelector" name="dentistaId" 
-                        class="shadow border rounded w-full md:w-1/2 py-2 px-3"
-                        hx-get="/dashboard/agenda-dentista"
-                        hx-target="#agenda-container"
-                        hx-indicator="#loading-indicator">
-                    <option th:each="dent : ${listaDentistas}"
-                            th:value="${dent.id}"
-                            th:text="${dent.nomeAdm}"
-                            th:selected="${dent.id == dentistaSelecionadoId}"></option>
-                </select>
+            
+            <div class="mb-10">
+                <h2 class="text-2xl font-bold text-blue-700 mb-4">Suas Consultas de Hoje</h2>
+                <p class="text-lg text-gray-600 mt-1 mb-4" th:text="${dataAtualFormatada}"></p>
+                
+                <div th:if="${#lists.isEmpty(consultasDoDia)}" class="text-center text-gray-500 p-6 border rounded-lg">
+                    Você não possui consultas agendadas para hoje.
+                </div>
+                 <ul th:if="${not #lists.isEmpty(consultasDoDia)}" class="space-y-3">
+                    <li th:each="consulta : ${consultasDoDia}" class="p-4 border rounded-lg flex justify-between items-center">
+                        <div>
+                            <span class="font-bold text-blue-600" th:text="${#dates.format(consulta.dataHora, 'HH:mm')}"></span>
+                            <span class="ml-4 font-medium" th:text="'com Dr(a). ' + ${consulta.dentista.nomeAdm}"></span>
+                        </div>
+                        <div>
+                            <span class="px-3 py-1 text-sm font-semibold rounded-full"
+                                  th:text="${consulta.status}"
+                                  th:classappend="${consulta.status == 'AGENDADA'} ? 'bg-yellow-200 text-yellow-800' : 'bg-red-200 text-red-800'">
+                            </span>
+                        </div>
+                    </li>
+                </ul>
             </div>
 
-            <div id="loading-indicator" class="htmx-indicator text-center p-4">
-                <p class="text-gray-500">Carregando agenda...</p>
-            </div>
+            <hr class="my-8">
 
-            <!-- Container da Agenda -->
-            <div id="agenda-container">
-                <div th:replace="~{layout/fragments/dashboard-agenda :: agenda-grid}"></div>
+            <div>
+                <h1 class="text-2xl font-bold text-blue-700">Agendar uma Nova Consulta</h1>
+                <div class="mt-6 mb-4">
+                    <label for="dentistaSelector" class="block text-gray-700 text-sm font-bold mb-2">Selecione um Dentista para ver a agenda:</label>
+                    <select id="dentistaSelector" name="dentistaId" 
+                            class="shadow border rounded w-full md:w-1/2 py-2 px-3"
+                            hx-get="/dashboard/agenda-dentista"
+                            hx-target="#agenda-container"
+                            hx-indicator="#loading-indicator">
+                        <option th:each="dent : ${listaDentistas}"
+                                th:value="${dent.id}"
+                                th:text="${dent.nomeAdm}"
+                                th:selected="${dent.id == dentistaSelecionadoId}"></option>
+                    </select>
+                </div>
+
+                <div id="loading-indicator" class="htmx-indicator text-center p-4">
+                    <p class="text-gray-500">Carregando agenda...</p>
+                </div>
+
+                <div id="agenda-container">
+                    <div th:replace="~{layout/fragments/dashboard-agenda :: agenda-grid}"></div>
+                </div>
             </div>
         </div>
     </div>

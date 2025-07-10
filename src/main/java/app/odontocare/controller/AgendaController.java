@@ -14,6 +14,9 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -59,13 +62,25 @@ public class AgendaController {
             }
         }
 
+    // ✅ MÉTODO ATUALIZADO PARA BUSCA E ORDENAÇÃO
     @GetMapping
-    public String listarAgendas(Model model, @RequestParam(defaultValue = "0") int page) {
-        int tamanhoPagina = 5; // ou 10, você escolhe
-        Page<Agenda> pagina = agendaService.listarPaginado(PageRequest.of(page, tamanhoPagina));
-        
-        model.addAttribute("listaAgendas", pagina.getContent()); // dados da página atual
-        model.addAttribute("pagina", pagina); // metadados para navegação
+    public String listarAgendas(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "dentista.nomeAdm") String sort, // Ordenação padrão
+            @RequestParam(defaultValue = "asc") String order,
+            @RequestParam(required = false) String nome, // Nome do dentista para buscar
+            Model model) {
+
+        Sort.Direction direction = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, 5, Sort.by(direction, sort));
+
+        Page<Agenda> pagina = agendaService.listarPaginado(nome, pageable);
+
+        model.addAttribute("pagina", pagina);
+        model.addAttribute("sort", sort);
+        model.addAttribute("order", order);
+        model.addAttribute("nome", nome);
+        model.addAttribute("reverseOrder", "asc".equals(order) ? "desc" : "asc");
 
         return "agenda/lista-agendas";
     }

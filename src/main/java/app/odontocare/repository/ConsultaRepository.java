@@ -24,6 +24,16 @@ public interface ConsultaRepository extends JpaRepository<Consulta, Long> {
     Page<Consulta> findByDentistaId(Long dentistaId, Pageable pageable);
 
     // Em ConsultaRepository.java
-List<Consulta> findByDentistaIdAndDataHoraBetweenOrderByDataHoraAsc(Long dentistaId, Date inicio, Date fim);
+    List<Consulta> findByDentistaIdAndDataHoraBetweenOrderByDataHoraAsc(Long dentistaId, Date inicio, Date fim);
+
+    // ✅ NOVO: Para buscar as consultas de um cliente em um dia específico.
+    List<Consulta> findByClienteIdAndDataHoraBetweenOrderByDataHoraAsc(Long clienteId, Date inicio, Date fim);
+
+    // ✅ NOVO: Para o ADMIN buscar consultas pelo nome do cliente
+    Page<Consulta> findByClienteNomeClienteContainingIgnoreCase(String nomeCliente, Pageable pageable);
+
+    // ✅ NOVO: Para o DENTISTA buscar consultas de um cliente específico pelo nome
+    Page<Consulta> findByDentistaIdAndClienteNomeClienteContainingIgnoreCase(Long dentistaId, String nomeCliente, Pageable pageable);
+
 
 }

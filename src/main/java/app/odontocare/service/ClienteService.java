@@ -127,8 +127,15 @@ public class ClienteService {
         clienteRepository.deleteById(id);
     }
 
-    public Page<Cliente> listarPaginado(Pageable pageable) {
-        return clienteRepository.findAll(pageable);
+    // ✅ MÉTODO ATUALIZADO
+    public Page<Cliente> listarPaginado(String nome, Pageable pageable) {
+        if (nome != null && !nome.trim().isEmpty()) {
+            // Se um nome foi fornecido, filtra por esse nome
+            return clienteRepository.findByNomeClienteContainingIgnoreCase(nome, pageable);
+        } else {
+            // Caso contrário, retorna todos
+            return clienteRepository.findAll(pageable);
+        }
     }
 
 }

@@ -228,4 +228,15 @@ public class DentistaService {
                 .map(consulta -> consulta.getDataHora().toInstant().atZone(ZoneId.systemDefault()).toLocalTime())
                 .collect(Collectors.toList());
     }
+
+    // ✅ MÉTODO ATUALIZADO
+    public Page<Dentista> listarPaginado(String nome, Pageable pageable) {
+        if (nome != null && !nome.isEmpty()) {
+            // Se um nome foi fornecido, usa o novo método de busca
+            return dentistaRepository.findByNomeAdmContainingIgnoreCase(nome, pageable);
+        } else {
+            // Caso contrário, retorna todos
+            return dentistaRepository.findAll(pageable);
+        }
+    }
 }

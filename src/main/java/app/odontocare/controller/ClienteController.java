@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import java.util.Optional;
 
@@ -46,11 +48,26 @@ public class ClienteController {
         }
     }
 
+    // ✅ MÉTODO ATUALIZADO PARA BUSCA E ORDENAÇÃO
     @GetMapping
-    public String listarClientes(@RequestParam(defaultValue = "0") int page, Model model) {
-        int pageSize = 5;
-        Page<Cliente> pagina = clienteService.listarPaginado(PageRequest.of(page, pageSize));
+    public String listarClientes(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "nomeCliente") String sort, // Campo de ordenação padrão
+            @RequestParam(defaultValue = "asc") String order,
+            @RequestParam(required = false) String nome, // Parâmetro de busca
+            Model model) {
+
+        Sort.Direction direction = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, 5, Sort.by(direction, sort));
+
+        Page<Cliente> pagina = clienteService.listarPaginado(nome, pageable);
+
         model.addAttribute("pagina", pagina);
+        model.addAttribute("sort", sort);
+        model.addAttribute("order", order);
+        model.addAttribute("nome", nome);
+        model.addAttribute("reverseOrder", "asc".equals(order) ? "desc" : "asc");
+
         return "cliente/lista-clientes";
     }
 

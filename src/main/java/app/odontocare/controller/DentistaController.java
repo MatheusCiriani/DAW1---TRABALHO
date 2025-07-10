@@ -3,18 +3,20 @@ package app.odontocare.controller;
 import app.odontocare.model.Dentista;
 import app.odontocare.service.DentistaService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
 import java.time.LocalDate;
-import java.time.DayOfWeek;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 
 @Controller
 @RequestMapping("/dentistas")
@@ -27,12 +29,31 @@ public class DentistaController {
         this.dentistaService = dentistaService;
     }
 
+    // ✅ MANTENHA APENAS ESTA VERSÃO DO MÉTODO
     @GetMapping
-    public String listarDentistas(@RequestParam(defaultValue = "0") int page, Model model) {
-        Page<Dentista> pagina = dentistaService.listarPaginado(PageRequest.of(page, 5));
+    public String listarDentistas(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "nomeAdm") String sort,
+            @RequestParam(defaultValue = "asc") String order,
+            @RequestParam(required = false) String nome,
+            Model model) {
+
+        Sort.Direction direction = "asc".equalsIgnoreCase(order) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        Pageable pageable = PageRequest.of(page, 5, Sort.by(direction, sort));
+
+        // Supondo que seu service foi atualizado para receber o nome
+        Page<Dentista> pagina = dentistaService.listarPaginado(nome, pageable);
+
         model.addAttribute("pagina", pagina);
+        model.addAttribute("sort", sort);
+        model.addAttribute("order", order);
+        model.addAttribute("nome", nome);
+        model.addAttribute("reverseOrder", "asc".equals(order) ? "desc" : "asc");
+
         return "dentista/lista-dentistas";
     }
+
+    // O método abaixo foi removido para evitar duplicidade.
 
     @GetMapping("/novo")
     public String mostrarFormularioCadastroDentista(Model model) {
@@ -42,10 +63,11 @@ public class DentistaController {
     }
 
     @PostMapping("/cadastrar")
-    public String cadastrarDentista(@ModelAttribute("dentista") /*@Valid*/ Dentista dentista,
+    public String cadastrarDentista(@ModelAttribute("dentista") Dentista dentista,
                                     BindingResult result,
                                     RedirectAttributes redirectAttributes) {
         try {
+            // Supondo que o método cadastrarDentista exista no service
             dentistaService.cadastrarDentista(dentista);
             redirectAttributes.addFlashAttribute("successMessage", "Dentista cadastrado com sucesso!");
             return "redirect:/dentistas";
@@ -69,10 +91,11 @@ public class DentistaController {
 
     @PostMapping("/atualizar/{id}")
     public String atualizarDentista(@PathVariable Long id,
-                                    @ModelAttribute("dentista") /*@Valid*/ Dentista dentista,
+                                    @ModelAttribute("dentista") Dentista dentista,
                                     BindingResult result,
                                     RedirectAttributes redirectAttributes) {
         try {
+            // Supondo que o método atualizarDentista exista no service
             dentistaService.atualizarDentista(id, dentista);
             redirectAttributes.addFlashAttribute("successMessage", "Dentista atualizado com sucesso!");
             return "redirect:/dentistas";
@@ -85,6 +108,7 @@ public class DentistaController {
     @GetMapping("/deletar/{id}")
     public String deletarDentista(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         try {
+            // Supondo que o método deletarDentista exista no service
             dentistaService.deletarDentista(id);
             redirectAttributes.addFlashAttribute("successMessage", "Dentista deletado com sucesso!");
         } catch (RuntimeException e) {
@@ -99,7 +123,7 @@ public class DentistaController {
                                    Model model,
                                    RedirectAttributes redirectAttributes) {
         Optional<Dentista> dentistaOptional = dentistaService.buscarPorId(id);
-        if (!dentistaOptional.isPresent()) {
+        if (dentistaOptional.isEmpty()) {
             redirectAttributes.addFlashAttribute("errorMessage", "Dentista não encontrado.");
             return "redirect:/dentistas";
         }
