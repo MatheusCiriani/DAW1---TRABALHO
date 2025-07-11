@@ -31,13 +31,10 @@ public class WebSecurityConfig {
                 // 4. Regras para CLIENTE (e outros autenticados)
                 .requestMatchers("/consultas").authenticated()
                 .requestMatchers("/consultas/novo", "/consultas/cadastrar", "/consultas/horarios-disponiveis").authenticated()
-                
-                // ✅ CORREÇÃO: Permite que qualquer usuário autenticado acesse as páginas de edição.
-                // A lógica de quem pode editar o quê será feita no Controller.
                 .requestMatchers("/consultas/editar/**", "/consultas/atualizar/**").authenticated()
                 
-                // Apenas ADMIN e DENTISTA podem cancelar ou finalizar
-                .requestMatchers("/consultas/cancelar/**", "/consultas/finalizar/**").hasAnyRole("ADMIN", "DENTISTA")
+                // Apenas ADMIN e DENTISTA podem cancelar ou finalizar/deletar
+                .requestMatchers("/consultas/cancelar/**", "/consultas/finalizar/**", "/consultas/deletar/**").hasAnyRole("ADMIN", "DENTISTA")
 
                 // Apenas admin pode editar/deletar clientes
                 .requestMatchers("/clientes/**").hasRole("ADMIN")
@@ -55,6 +52,7 @@ public class WebSecurityConfig {
                 .logoutSuccessUrl("/login?logout")
                 .permitAll()
             );
+            // A linha .requiresChannel(...) foi removida daqui.
 
         return http.build();
     }
